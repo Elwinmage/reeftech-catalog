@@ -55,7 +55,9 @@ def _summary(root: Path, section: str, entry: Entry) -> dict:
     summary: dict = {"kind": entry.kind}
     if entry.kind == "item":
         item = read_json(entry.files["item.json"])
-        category = read_json(root / section / "categories" / item["category"] / "category.json")
+        category = read_json(
+            root / section / "categories" / item["category"] / "category.json"
+        )
         summary["category"] = item["category"]
         summary["scopes"] = item.get("scopes", category["scopes"])
     elif entry.kind == "category":
@@ -74,7 +76,9 @@ def _parse_min(values: list[str], section: str) -> dict[str, str]:
     for value in values:
         name, _, version = value.partition("=")
         if name not in CONSUMERS[section] or not version:
-            raise SystemExit(f"--min-integration expects one of {CONSUMERS[section]} as name=version, got {value!r}")
+            raise SystemExit(
+                f"--min-integration expects one of {CONSUMERS[section]} as name=version, got {value!r}"
+            )
         result[name] = version
     return result
 
@@ -124,34 +128,47 @@ def build(
     minimum = dict((previous or {}).get("min_integration", {}))
     minimum.update(min_integration or {})
 
+    lines = [f"# {section} {version}", ""]
+    for title, names in (("Added", added), ("Updated", updated), ("Removed", removed)):
+        if names:
+            lines += (
+                [f"## {title}", ""]
+                + [f"- `{n.split('.', 1)[-1]}` ({n.split('.')[0]})" for n in names]
+                + [""]
+            )
+    if not (added or updated or removed):
+        lines += ["No content change.", ""]
+    notes = "\n".join(lines)
+    (out / "notes.md").write_text(notes, encoding="utf-8")
+
     manifest = {
         "format": SCHEMA_VERSION,
         "section": section,
         "version": version,
         "generated": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "min_integration": minimum,
+        # Shown by the update entities of the integrations
+        "notes": notes,
         "entries": entries,
     }
-    (out / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-
-    lines = [f"# {section} {version}", ""]
-    for title, names in (("Added", added), ("Updated", updated), ("Removed", removed)):
-        if names:
-            lines += [f"## {title}", ""] + [f"- `{n.split('.', 1)[-1]}` ({n.split('.')[0]})" for n in names] + [""]
-    if not (added or updated or removed):
-        lines += ["No content change.", ""]
-    (out / "notes.md").write_text("\n".join(lines), encoding="utf-8")
+    (out / "manifest.json").write_text(
+        json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
     return manifest
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     parser.add_argument("section", choices=SECTIONS)
     parser.add_argument("version")
-    parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parent.parent)
+    parser.add_argument(
+        "--root", type=Path, default=Path(__file__).resolve().parent.parent
+    )
     parser.add_argument("--out", type=Path, default=Path("dist"))
     parser.add_argument("--previous", type=Path)
-    parser.add_argument("--min-integration", action="append", default=[], metavar="NAME=VERSION")
+    parser.add_argument(
+        "--min-integration", action="append", default=[], metavar="NAME=VERSION"
+    )
     args = parser.parse_args(argv)
 
     previous = None
@@ -168,7 +185,9 @@ def main(argv: list[str] | None = None) -> int:
         _parse_min(args.min_integration, args.section),
     )
     changed = sum(1 for e in manifest["entries"].values() if e["since"] == args.version)
-    print(f"{args.section} {args.version}: {len(manifest['entries'])} entries, {changed} to upload")
+    print(
+        f"{args.section} {args.version}: {len(manifest['entries'])} entries, {changed} to upload"
+    )
     return 0
 
 

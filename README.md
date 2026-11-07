@@ -11,9 +11,10 @@ the cards.
 | `supplements` | supplements, bottle visuals, dosing data | [redsea](https://github.com/Elwinmage/ha-reefbeat-component) | ha-reef-card (ReefDose) |
 
 The cards never access the network: integrations download the releases, check
-them, keep them under `<config>` and serve them locally. Each integration also
-ships a minimal built-in set (generic categories, generic bottle) for its first
-start and for offline installs. See [doc/consumers.md](doc/consumers.md).
+them, keep them under `<config>` and serve them locally, with a built-in
+snapshot for their first start and for offline installs. The integration side
+is written once in [`client/`](client) and copied into each integration by
+`scripts/sync_client.py`. See [doc/consumers.md](doc/consumers.md).
 
 ## Layout
 
@@ -32,7 +33,8 @@ supplements/
   items/<supplement_id>/
     supplement.json             kind, colour, dosing data
     image.webp / thumb.webp     bottle visual (optional, generic bottle otherwise)
-scripts/                        validate.py, make_release.py
+scripts/                        validate.py, make_release.py, sync_client.py
+client/                         catalog client copied into the integrations
 ```
 
 A file or folder name is the entry id. Ids are **stable**: user
@@ -99,6 +101,9 @@ Each section is released on its own (*Actions → Release*), with a version like
   release.**
 - `<section>-latest`: only the current `manifest.json`, at a fixed URL.
 
+After a release, run `sync_client.py` so that the next version of each
+integration ships an up-to-date built-in snapshot.
+
 The manifest gives, per entry, its kind, scopes, archive, sha256, size and the
 version that last changed it, plus the oldest version of each integration able
 to read the section (`min_integration`).
@@ -109,7 +114,8 @@ to read the section (`min_integration`).
 pip install -r requirements.txt
 python scripts/validate.py          # errors fail, warnings are listed
 python scripts/validate.py --strict # warnings fail too
-pytest --cov=scripts
+pytest --cov=scripts --cov=client
+python scripts/sync_client.py --base .. [--check]  # refresh the integrations' copies
 ```
 
 Warnings are missing translations of tasks and equipment (`en` is

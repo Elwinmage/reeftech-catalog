@@ -1,13 +1,16 @@
 [tool.ruff]
-line-length = 120
+line-length = 88
 target-version = "py313"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
+# Long strings are left to the formatter (as in the integrations)
+ignore = ["E501"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["catalog", "make_release", "validate"]
+known-first-party = ["catalog", "make_release", "validate", "conftest", "custom_components"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["scripts"]
+pythonpath = ["scripts", "tests/client"]
+asyncio_mode = "auto"

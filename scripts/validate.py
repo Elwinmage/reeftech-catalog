@@ -17,7 +17,15 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
 
-from catalog import ASSET_FILES, DESCRIPTOR_MAX, KNOWN_LANGS, SECTIONS, collect, entry_id, read_json
+from catalog import (
+    ASSET_FILES,
+    DESCRIPTOR_MAX,
+    KNOWN_LANGS,
+    SECTIONS,
+    collect,
+    entry_id,
+    read_json,
+)
 
 # Plausible raise for 1 mL in 100 L, per (parameter, unit). A value outside
 # these bounds is almost surely a typo (factor 10 or wrong unit) and could
@@ -36,7 +44,11 @@ EFFECT_BOUNDS = {
 # salt stops dissolving around 360 g/L.
 BRINE_BOUNDS = (50, 350)
 
-DESCRIPTORS = {"category": "category.json", "item": "item.json", "supplement": "supplement.json"}
+DESCRIPTORS = {
+    "category": "category.json",
+    "item": "item.json",
+    "supplement": "supplement.json",
+}
 
 
 @dataclass
@@ -61,7 +73,9 @@ def _validators(root: Path) -> dict[str, Draft202012Validator]:
         schemas[path.name.split(".")[0]] = schema
     registry = Registry().with_resources(resources)
     return {
-        name: Draft202012Validator(schema, registry=registry) for name, schema in schemas.items() if name != "common"
+        name: Draft202012Validator(schema, registry=registry)
+        for name, schema in schemas.items()
+        if name != "common"
     }
 
 
@@ -80,7 +94,13 @@ def _check_schedule(report: Report, where: str, schedule: dict | None) -> None:
         every = schedule["every"]
         if not every["min"] <= every["default"] <= every["max"]:
             report.error(where, f"schedule needs min <= default <= max, got {every}")
-    elif schedule["day"] > (29 if schedule["month"] == 2 else 30 if schedule["month"] in (4, 6, 9, 11) else 31):
+    elif schedule["day"] > (
+        29
+        if schedule["month"] == 2
+        else 30
+        if schedule["month"] in (4, 6, 9, 11)
+        else 31
+    ):
         report.error(where, f"no day {schedule['day']} in month {schedule['month']}")
 
 
@@ -104,7 +124,10 @@ def _check_files(report: Report, where: str, entry, descriptor: str) -> None:
         elif name in ASSET_FILES:
             limit = ASSET_FILES[name]
         else:
-            report.error(where, f"unexpected file {name!r} (allowed: {descriptor}, {', '.join(ASSET_FILES)})")
+            report.error(
+                where,
+                f"unexpected file {name!r} (allowed: {descriptor}, {', '.join(ASSET_FILES)})",
+            )
             continue
         if size > limit:
             report.error(where, f"{name} is {size} bytes, limit {limit}")
@@ -112,7 +135,9 @@ def _check_files(report: Report, where: str, entry, descriptor: str) -> None:
         report.error(where, "image.webp and image.png both present, keep one")
 
 
-def _load(report: Report, where: str, path: Path, validator: Draft202012Validator) -> dict | None:
+def _load(
+    report: Report, where: str, path: Path, validator: Draft202012Validator
+) -> dict | None:
     try:
         data = read_json(path)
     except (OSError, json.JSONDecodeError) as err:
@@ -167,7 +192,10 @@ def _check_equipment(root: Path, report: Report, validators) -> None:
                 continue
             extra = set(data.get("scopes", [])) - set(category["scopes"])
             if extra:
-                report.error(where, f"scopes {sorted(extra)} not allowed by category {data['category']!r}")
+                report.error(
+                    where,
+                    f"scopes {sorted(extra)} not allowed by category {data['category']!r}",
+                )
             _check_i18n(report, where, data.get("name"))
             if not any(n.startswith("image.") for n in entry.files):
                 report.warn(where, "no image, the category image will be shown")
@@ -183,7 +211,9 @@ def _check_supplements(root: Path, report: Report, validators) -> None:
         _check_files(report, where, entry, "supplement.json")
         if "supplement.json" not in entry.files:
             continue
-        data = _load(report, where, entry.files["supplement.json"], validators["supplement"])
+        data = _load(
+            report, where, entry.files["supplement.json"], validators["supplement"]
+        )
         if data is None:
             continue
         supplements[eid] = data
@@ -195,7 +225,9 @@ def _check_supplements(root: Path, report: Report, validators) -> None:
             if value is None:
                 continue
             if value in seen_values:
-                report.error(where, f"{key} {value!r} already used by {seen_values[value]!r}")
+                report.error(
+                    where, f"{key} {value!r} already used by {seen_values[value]!r}"
+                )
             seen_values[value] = eid
         if "bundle" in data and data["kind"] != "bundle":
             report.error(where, "only a supplement of kind 'bundle' has parts")
@@ -211,13 +243,22 @@ def _check_supplements(root: Path, report: Report, validators) -> None:
             report.error(where, "only a brine can drive salinity regulation")
         if brine:
             conc = data.get("concentration_g_l")
-            if conc and not (BRINE_BOUNDS[0] <= conc["min"] <= conc["default"] <= conc["max"] <= BRINE_BOUNDS[1]):
+            if conc and not (
+                BRINE_BOUNDS[0]
+                <= conc["min"]
+                <= conc["default"]
+                <= conc["max"]
+                <= BRINE_BOUNDS[1]
+            ):
                 report.error(
                     where,
                     f"concentration_g_l must satisfy {BRINE_BOUNDS[0]} <= min <= default <= max <= {BRINE_BOUNDS[1]}",
                 )
             if data.get("effects"):
-                report.error(where, "a brine has no effects: its salinity raise is computed from the concentration")
+                report.error(
+                    where,
+                    "a brine has no effects: its salinity raise is computed from the concentration",
+                )
 
         seen = set()
         for effect in data.get("effects", []):
@@ -227,7 +268,10 @@ def _check_supplements(root: Path, report: Report, validators) -> None:
             seen.add(effect["parameter"])
             bounds = EFFECT_BOUNDS.get(key)
             if bounds is None:
-                report.error(where, f"unit {effect['unit']!r} not supported for {effect['parameter']!r}")
+                report.error(
+                    where,
+                    f"unit {effect['unit']!r} not supported for {effect['parameter']!r}",
+                )
             elif not bounds[0] <= effect["per_ml_per_100l"] <= bounds[1]:
                 report.error(
                     where,
@@ -238,7 +282,9 @@ def _check_supplements(root: Path, report: Report, validators) -> None:
         if data["verified"] and "source" not in data:
             report.error(where, "verified dosing data needs a source")
         if data.get("effects") and not data["verified"]:
-            report.warn(where, "effects not verified: not used for automatic dose proposals")
+            report.warn(
+                where, "effects not verified: not used for automatic dose proposals"
+            )
 
     for eid, data in supplements.items():
         slots = [part["slot"] for part in data.get("bundle", [])]
@@ -247,9 +293,14 @@ def _check_supplements(root: Path, report: Report, validators) -> None:
         for part in data.get("bundle", []):
             target = supplements.get(part["part"])
             if target is None:
-                report.error(f"supplements/items/{eid}", f"unknown bundle part {part['part']!r}")
+                report.error(
+                    f"supplements/items/{eid}", f"unknown bundle part {part['part']!r}"
+                )
             elif target["kind"] == "bundle":
-                report.error(f"supplements/items/{eid}", f"bundle part {part['part']!r} is itself a bundle")
+                report.error(
+                    f"supplements/items/{eid}",
+                    f"bundle part {part['part']!r} is itself a bundle",
+                )
 
 
 def validate(root: Path) -> Report:
@@ -264,9 +315,13 @@ def validate(root: Path) -> Report:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parent.parent)
-    parser.add_argument("--strict", action="store_true", help="treat warnings as errors")
+    parser = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
+    parser.add_argument(
+        "--root", type=Path, default=Path(__file__).resolve().parent.parent
+    )
+    parser.add_argument(
+        "--strict", action="store_true", help="treat warnings as errors"
+    )
     args = parser.parse_args(argv)
 
     report = validate(args.root)

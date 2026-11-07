@@ -24,14 +24,21 @@ def dump(path: Path, data: dict) -> None:
 
 
 def interval(default=1, low=1, high=3, unit="months"):
-    return {"type": "interval", "unit": unit, "every": {"default": default, "min": low, "max": high}}
+    return {
+        "type": "interval",
+        "unit": unit,
+        "every": {"default": default, "min": low, "max": high},
+    }
 
 
 @pytest.fixture
 def root(tmp_path: Path) -> Path:
     """A minimal valid catalog."""
     shutil.copytree(REPO / "schema", tmp_path / "schema")
-    dump(tmp_path / "equipment/tasks/clean.json", {"name": {"en": "Clean"}, "schedule": interval()})
+    dump(
+        tmp_path / "equipment/tasks/clean.json",
+        {"name": {"en": "Clean"}, "schedule": interval()},
+    )
     dump(
         tmp_path / "equipment/categories/heater/category.json",
         {
@@ -41,7 +48,10 @@ def root(tmp_path: Path) -> Path:
             "maintenance": [{"task": "clean"}],
         },
     )
-    dump(tmp_path / "equipment/items/eheim-200/item.json", {"category": "heater", "brand": "Eheim", "model": "200"})
+    dump(
+        tmp_path / "equipment/items/eheim-200/item.json",
+        {"category": "heater", "brand": "Eheim", "model": "200"},
+    )
     dump(
         tmp_path / "supplements/items/brine/supplement.json",
         {
@@ -71,10 +81,18 @@ def test_minimal_catalog_is_valid(root):
 
 
 def test_unknown_task_and_category(root):
-    dump(root / "equipment/items/bad/item.json", {"category": "nope", "brand": "X", "model": "Y"})
+    dump(
+        root / "equipment/items/bad/item.json",
+        {"category": "nope", "brand": "X", "model": "Y"},
+    )
     dump(
         root / "equipment/categories/pump/category.json",
-        {"name": {"en": "Pump"}, "scopes": ["aquarium"], "icon": "mdi:pump", "maintenance": [{"task": "missing"}]},
+        {
+            "name": {"en": "Pump"},
+            "scopes": ["aquarium"],
+            "icon": "mdi:pump",
+            "maintenance": [{"task": "missing"}],
+        },
     )
     found = errors(root)
     assert any("unknown category 'nope'" in e for e in found)
@@ -95,10 +113,16 @@ def test_task_listed_twice(root):
 
 
 def test_schedule_bounds_and_dates(root):
-    dump(root / "equipment/tasks/bad.json", {"name": {"en": "Bad"}, "schedule": interval(5, 1, 3)})
+    dump(
+        root / "equipment/tasks/bad.json",
+        {"name": {"en": "Bad"}, "schedule": interval(5, 1, 3)},
+    )
     dump(
         root / "equipment/tasks/feb.json",
-        {"name": {"en": "Feb"}, "schedule": {"type": "seasonal", "month": 2, "day": 30}},
+        {
+            "name": {"en": "Feb"},
+            "schedule": {"type": "seasonal", "month": 2, "day": 30},
+        },
     )
     found = errors(root)
     assert any("min <= default <= max" in e for e in found)
@@ -107,13 +131,17 @@ def test_schedule_bounds_and_dates(root):
 
 def test_item_scope_outside_category(root):
     dump(
-        root / "equipment/items/pool/item.json", {"category": "heater", "brand": "X", "model": "Y", "scopes": ["pool"]}
+        root / "equipment/items/pool/item.json",
+        {"category": "heater", "brand": "X", "model": "Y", "scopes": ["pool"]},
     )
     assert any("not allowed by category" in e for e in errors(root))
 
 
 def test_english_is_mandatory_and_others_warn(root):
-    dump(root / "equipment/tasks/fr.json", {"name": {"fr": "Nettoyer"}, "schedule": interval()})
+    dump(
+        root / "equipment/tasks/fr.json",
+        {"name": {"fr": "Nettoyer"}, "schedule": interval()},
+    )
     report = validate.validate(root)
     assert any("'en' is a required property" in e for e in report.errors)
     assert any("missing translations" in w for w in report.warnings)
@@ -134,7 +162,13 @@ def test_invalid_json(root):
 
 
 def supplement(root: Path, name: str, **data) -> None:
-    base = {"brand": "B", "name": name, "fullname": f"B - {name}", "kind": "kh", "verified": False}
+    base = {
+        "brand": "B",
+        "name": name,
+        "fullname": f"B - {name}",
+        "kind": "kh",
+        "verified": False,
+    }
     dump(root / f"supplements/items/{name}/supplement.json", base | data)
 
 
@@ -142,15 +176,33 @@ def test_supplement_rules(root):
     supplement(root, "salty", regulation=["salinity"])
     supplement(root, "conc", concentration_g_l={"default": 200, "min": 100, "max": 300})
     supplement(root, "brine2", kind="brine")
-    supplement(root, "strong", kind="brine", concentration_g_l={"default": 400, "min": 100, "max": 500})
-    supplement(root, "typo", effects=[{"parameter": "kh", "unit": "dkh", "per_ml_per_100l": 3.5}])
-    supplement(root, "unit", effects=[{"parameter": "kh", "unit": "ppm", "per_ml_per_100l": 0.1}])
+    supplement(
+        root,
+        "strong",
+        kind="brine",
+        concentration_g_l={"default": 400, "min": 100, "max": 500},
+    )
+    supplement(
+        root,
+        "typo",
+        effects=[{"parameter": "kh", "unit": "dkh", "per_ml_per_100l": 3.5}],
+    )
+    supplement(
+        root,
+        "unit",
+        effects=[{"parameter": "kh", "unit": "ppm", "per_ml_per_100l": 0.1}],
+    )
     supplement(root, "trusted", verified=True)
     supplement(root, "dup1", uid="abc")
     supplement(root, "dup2", uid="abc")
     supplement(root, "samename", fullname="B - dup1")
     supplement(
-        root, "notbundle", bundle=[{"slot": 1, "part": "dup1", "ratio": 1}, {"slot": 2, "part": "dup2", "ratio": 1}]
+        root,
+        "notbundle",
+        bundle=[
+            {"slot": 1, "part": "dup1", "ratio": 1},
+            {"slot": 2, "part": "dup2", "ratio": 1},
+        ],
     )
     supplement(root, "emptybundle", kind="bundle")
     supplement(
@@ -184,7 +236,9 @@ def test_supplement_rules(root):
 
 
 def test_unverified_effects_warn(root):
-    supplement(root, "kh", effects=[{"parameter": "kh", "unit": "dkh", "per_ml_per_100l": 0.1}])
+    supplement(
+        root, "kh", effects=[{"parameter": "kh", "unit": "dkh", "per_ml_per_100l": 0.1}]
+    )
     report = validate.validate(root)
     assert report.errors == []
     assert any("not used for automatic dose proposals" in w for w in report.warnings)
@@ -192,7 +246,9 @@ def test_unverified_effects_warn(root):
 
 def test_main_exit_codes(root, capsys):
     assert validate.main(["--root", str(root)]) == 0
-    assert validate.main(["--root", str(root), "--strict"]) == 1  # translation/image warnings
+    assert (
+        validate.main(["--root", str(root), "--strict"]) == 1
+    )  # translation/image warnings
     (root / "equipment/tasks/broken.json").write_text("{", encoding="utf-8")
     assert validate.main(["--root", str(root)]) == 1
     assert "error(s)" in capsys.readouterr().out
@@ -200,7 +256,11 @@ def test_main_exit_codes(root, capsys):
 
 def test_release_is_incremental(root, tmp_path):
     first = make_release.build(
-        root, "equipment", "2026.11.0", tmp_path / "d1", min_integration={"reef_maintenance": "0.3.0"}
+        root,
+        "equipment",
+        "2026.11.0",
+        tmp_path / "d1",
+        min_integration={"reef_maintenance": "0.3.0"},
     )
     assert set(first["entries"]) == {"tasks", "category.heater", "item.eheim-200"}
     item = first["entries"]["item.eheim-200"]
@@ -209,18 +269,28 @@ def test_release_is_incremental(root, tmp_path):
     with zipfile.ZipFile(tmp_path / "d1/upload/item.eheim-200.zip") as archive:
         assert archive.namelist() == ["item.json"]
 
-    dump(root / "equipment/tasks/clean.json", {"name": {"en": "Clean it"}, "schedule": interval()})
+    dump(
+        root / "equipment/tasks/clean.json",
+        {"name": {"en": "Clean it"}, "schedule": interval()},
+    )
     (root / "equipment/items/eheim-200/item.json").unlink()
     (root / "equipment/items/eheim-200").rmdir()
-    second = make_release.build(root, "equipment", "2026.11.1", tmp_path / "d2", previous=first)
-    assert second["entries"]["category.heater"]["archive"] == "equipment-2026.11.0/category.heater.zip"
+    second = make_release.build(
+        root, "equipment", "2026.11.1", tmp_path / "d2", previous=first
+    )
+    assert (
+        second["entries"]["category.heater"]["archive"]
+        == "equipment-2026.11.0/category.heater.zip"
+    )
     assert second["entries"]["tasks"]["since"] == "2026.11.1"
     assert second["min_integration"] == {"reef_maintenance": "0.3.0"}
     assert sorted(p.name for p in (tmp_path / "d2/upload").iterdir()) == ["tasks.zip"]
     notes = (tmp_path / "d2/notes.md").read_text()
     assert "## Updated" in notes and "## Removed" in notes and "`eheim-200`" in notes
 
-    third = make_release.build(root, "equipment", "2026.11.2", tmp_path / "d3", previous=second)
+    third = make_release.build(
+        root, "equipment", "2026.11.2", tmp_path / "d3", previous=second
+    )
     assert "No content change." in (tmp_path / "d3/notes.md").read_text()
     assert third["entries"] == second["entries"]
 
@@ -239,7 +309,13 @@ def test_release_argument_checks(root, tmp_path):
     with pytest.raises(SystemExit):
         make_release.build(root, "fish", "2026.11.0", tmp_path)
     with pytest.raises(SystemExit):
-        make_release.build(root, "equipment", "2026.11.0", tmp_path, previous={"section": "supplements"})
+        make_release.build(
+            root,
+            "equipment",
+            "2026.11.0",
+            tmp_path,
+            previous={"section": "supplements"},
+        )
     with pytest.raises(SystemExit):
         make_release._parse_min(["redsea=1.0"], "equipment")
 
@@ -248,14 +324,32 @@ def test_release_main(root, tmp_path, capsys):
     out = tmp_path / "out"
     assert (
         make_release.main(
-            ["supplements", "2026.11.0", "--root", str(root), "--out", str(out), "--min-integration", "redsea=2.0.0"]
+            [
+                "supplements",
+                "2026.11.0",
+                "--root",
+                str(root),
+                "--out",
+                str(out),
+                "--min-integration",
+                "redsea=2.0.0",
+            ]
         )
         == 0
     )
     prev = out / "manifest.json"
     assert (
         make_release.main(
-            ["supplements", "2026.11.1", "--root", str(root), "--out", str(tmp_path / "o2"), "--previous", str(prev)]
+            [
+                "supplements",
+                "2026.11.1",
+                "--root",
+                str(root),
+                "--out",
+                str(tmp_path / "o2"),
+                "--previous",
+                str(prev),
+            ]
         )
         == 0
     )
@@ -265,7 +359,16 @@ def test_release_main(root, tmp_path, capsys):
     prev.write_text(json.dumps(data))
     with pytest.raises(SystemExit):
         make_release.main(
-            ["supplements", "2026.11.2", "--root", str(root), "--out", str(tmp_path / "o3"), "--previous", str(prev)]
+            [
+                "supplements",
+                "2026.11.2",
+                "--root",
+                str(root),
+                "--out",
+                str(tmp_path / "o3"),
+                "--previous",
+                str(prev),
+            ]
         )
 
 
@@ -317,3 +420,75 @@ def test_structure_errors(tmp_path, root):
     assert catalog.collect(empty, "equipment") == []
     with pytest.raises(ValueError):
         catalog.collect(empty, "fish")
+
+
+def test_sync_client(root, tmp_path, capsys):
+    import sync_client
+
+    base = tmp_path / "checkouts"
+    dump(
+        root / "equipment/categories/boiler/category.json",
+        {"name": {"en": "Boiler"}, "scopes": ["home"], "icon": "mdi:x"},
+    )
+    dump(
+        root / "equipment/items/pool/item.json",
+        {"category": "heater", "brand": "X", "model": "Y", "scopes": ["pool"]},
+    )
+    for folder, (domain, _, _) in sync_client.TARGETS.items():
+        if folder != "ha-maintenance-hub":
+            (base / folder / "custom_components" / domain).mkdir(parents=True)
+
+    stale = sync_client.sync(base, check=True, root=root)
+    assert "ha-reefbeat-component/catalog_pack.py" in stale
+    assert not (
+        base / "ha-reefbeat-component/custom_components/redsea/catalog_pack.py"
+    ).exists()
+
+    stale = sync_client.sync(base, root=root)
+    assert len(stale) == 6  # 2 integrations x (2 modules + snapshot)
+    redsea = base / "ha-reefbeat-component/custom_components/redsea"
+    assert (
+        (redsea / "catalog_pack.py")
+        .read_text()
+        .startswith("# Generated from reeftech-catalog/client/catalog_pack.py")
+    )
+    assert (redsea / "catalog_builtin/items/brine/supplement.json").is_file()
+    reef = (
+        base
+        / "ha-reef-maintenance-component/custom_components/reef_maintenance/catalog_builtin"
+    )
+    assert sorted(p.name for p in (reef / "categories").iterdir()) == ["heater"]
+    assert sorted(p.name for p in (reef / "items").iterdir()) == ["eheim-200"]
+    assert (reef / "tasks/clean.json").is_file()
+
+    assert sync_client.sync(base, check=True, root=root) == []
+    (reef / "tasks/extra.json").write_text("{}")
+    assert sync_client.sync(base, check=True, root=root) == [
+        "ha-reef-maintenance-component/catalog_builtin"
+    ]
+    (reef / "tasks/extra.json").unlink()
+    (reef / "tasks/clean.json").write_text("{}")
+    assert sync_client.sync(base, check=True, root=root) == [
+        "ha-reef-maintenance-component/catalog_builtin"
+    ]
+    shutil.rmtree(reef / "tasks")
+    assert sync_client.sync(base, check=True, root=root) == [
+        "ha-reef-maintenance-component/catalog_builtin"
+    ]
+    shutil.rmtree(reef)
+    assert sync_client._same_tree(tmp_path / "none1", tmp_path / "none2")
+
+    assert sync_client.main(["--base", str(base), "--check"]) == 1
+    assert "out of date" in capsys.readouterr().out
+    assert sync_client.main(["--base", str(base)]) == 0
+    assert sync_client.main(["--base", str(base), "--check"]) == 0
+    assert "everything up to date" in capsys.readouterr().out
+
+
+def test_sync_snapshot_all_scopes(root, tmp_path):
+    import sync_client
+
+    sync_client.write_snapshot(root, "equipment", None, tmp_path / "all")
+    assert (tmp_path / "all/categories/heater/category.json").is_file()
+    sync_client.write_snapshot(root, "equipment", ("home",), tmp_path / "home")
+    assert not (tmp_path / "home/categories").exists()
