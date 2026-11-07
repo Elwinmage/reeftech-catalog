@@ -1,0 +1,17 @@
+{
+  "name": {
+    "en": "Other equipment",
+    "fr": "Autre équipement"
+  },
+  "scopes": [
+    "aquarium",
+    "pool",
+    "home"
+  ],
+  "icon": "mdi:power-socket-eu",
+  "maintenance": [
+    {
+      "task": "visual_inspection"
+    }
+  ]
+}

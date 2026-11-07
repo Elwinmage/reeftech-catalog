@@ -1,0 +1,20 @@
+{
+  "name": {
+    "en": "Visual inspection",
+    "fr": "Inspection visuelle"
+  },
+  "description": {
+    "en": "Check cables, plugs and housing for damage, heat marks or leaks.",
+    "fr": "Vérifier câbles, fiches et boîtier : dommages, traces de chauffe ou fuites."
+  },
+  "icon": "mdi:eye",
+  "schedule": {
+    "type": "interval",
+    "unit": "months",
+    "every": {
+      "default": 1,
+      "min": 1,
+      "max": 3
+    }
+  }
+}

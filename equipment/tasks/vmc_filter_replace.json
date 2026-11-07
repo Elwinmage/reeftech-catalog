@@ -1,0 +1,20 @@
+{
+  "name": {
+    "en": "Ventilation filters",
+    "fr": "Filtres de VMC"
+  },
+  "description": {
+    "en": "Replace the ventilation unit filters.",
+    "fr": "Remplacer les filtres de la VMC."
+  },
+  "icon": "mdi:air-filter",
+  "schedule": {
+    "type": "interval",
+    "unit": "months",
+    "every": {
+      "default": 6,
+      "min": 3,
+      "max": 12
+    }
+  }
+}

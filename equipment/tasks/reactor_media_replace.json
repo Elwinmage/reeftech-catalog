@@ -1,0 +1,20 @@
+{
+  "name": {
+    "en": "Reactor media replacement",
+    "fr": "Remplacement du média"
+  },
+  "description": {
+    "en": "Replace or refill the reactor media.",
+    "fr": "Remplacer ou recharger le média du réacteur."
+  },
+  "icon": "mdi:flask",
+  "schedule": {
+    "type": "interval",
+    "unit": "months",
+    "every": {
+      "default": 3,
+      "min": 1,
+      "max": 6
+    }
+  }
+}

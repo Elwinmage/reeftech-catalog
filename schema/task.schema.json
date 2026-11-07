@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Elwinmage/reeftech-catalog/schema/task.schema.json",
+  "title": "Maintenance task template (equipment/tasks/<id>.json)",
+  "type": "object",
+  "required": ["name", "schedule"],
+  "additionalProperties": false,
+  "properties": {
+    "name": { "$ref": "common.schema.json#/$defs/i18n" },
+    "description": { "$ref": "common.schema.json#/$defs/i18n" },
+    "icon": { "$ref": "common.schema.json#/$defs/icon" },
+    "schedule": { "$ref": "common.schema.json#/$defs/schedule" },
+    "regulatory": {
+      "description": "Required by law in some countries (shown as such by the maintenance cards).",
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

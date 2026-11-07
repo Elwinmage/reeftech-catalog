@@ -1,0 +1,20 @@
+{
+  "name": {
+    "en": "Condenser cleaning",
+    "fr": "Nettoyage du condenseur"
+  },
+  "description": {
+    "en": "Clean the condenser fins and check the airflow.",
+    "fr": "Nettoyer les ailettes du condenseur et vérifier la ventilation."
+  },
+  "icon": "mdi:snowflake",
+  "schedule": {
+    "type": "interval",
+    "unit": "months",
+    "every": {
+      "default": 6,
+      "min": 3,
+      "max": 12
+    }
+  }
+}

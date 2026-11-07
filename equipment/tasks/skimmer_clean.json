@@ -1,0 +1,20 @@
+{
+  "name": {
+    "en": "Skimmer cleaning",
+    "fr": "Nettoyage de l'écumeur"
+  },
+  "description": {
+    "en": "Empty the cup and clean the skimmer neck.",
+    "fr": "Vider le godet et nettoyer le col de l'écumeur."
+  },
+  "icon": "mdi:flask-empty-outline",
+  "schedule": {
+    "type": "interval",
+    "unit": "weeks",
+    "every": {
+      "default": 1,
+      "min": 1,
+      "max": 4
+    }
+  }
+}

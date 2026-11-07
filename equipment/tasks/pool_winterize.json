@@ -1,0 +1,17 @@
+{
+  "name": {
+    "en": "Pool winterizing",
+    "fr": "Hivernage de la piscine"
+  },
+  "description": {
+    "en": "Winterize the pool.",
+    "fr": "Mettre la piscine en hivernage."
+  },
+  "icon": "mdi:snowflake",
+  "schedule": {
+    "type": "seasonal",
+    "month": 10,
+    "day": 15,
+    "window_days": 30
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": {
+    "en": "Boiler",
+    "fr": "Chaudière"
+  },
+  "scopes": [
+    "home"
+  ],
+  "icon": "mdi:water-boiler",
+  "maintenance": [
+    {
+      "task": "boiler_service"
+    }
+  ]
+}

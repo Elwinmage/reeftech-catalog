@@ -1,0 +1,79 @@
+name: Release
+
+# Publishes one section of the catalog. Each section has:
+#   - versioned releases '<section>-<version>' holding the archives that
+#     changed in that version (never delete them: later manifests point to them);
+#   - a rolling release '<section>-latest' holding only the current
+#     manifest.json, read by the integrations at a fixed URL:
+#     https://github.com/<repo>/releases/download/<section>-latest/manifest.json
+
+on:
+  workflow_dispatch:
+    inputs:
+      section:
+        description: "Section to publish"
+        required: true
+        type: choice
+        options: [equipment, supplements]
+      version:
+        description: "Release version (ex: 2026.11.0)"
+        required: true
+      min_integration:
+        description: "Space separated name=version (ex: reef_maintenance=0.3.0 maintenance_hub=0.2.0); empty keeps the previous ones"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SECTION: ${{ inputs.section }}
+      VERSION: ${{ inputs.version }}
+      MIN_INTEGRATION: ${{ inputs.min_integration }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Check the catalog
+        run: python scripts/validate.py
+      - name: Previous manifest
+        run: |
+          mkdir -p prev
+          gh release download "$SECTION-latest" --repo "$GITHUB_REPOSITORY" \
+            --pattern manifest.json --dir prev || echo "first release of $SECTION"
+      - name: Build the release files
+        run: |
+          args=()
+          for item in $MIN_INTEGRATION; do args+=(--min-integration "$item"); done
+          python scripts/make_release.py "$SECTION" "$VERSION" --out dist \
+            --previous prev/manifest.json "${args[@]}"
+      - name: Stop when nothing changed
+        run: |
+          if grep -q "No content change." dist/notes.md && [ -z "$MIN_INTEGRATION" ]; then
+            echo "::error::No content change since the previous $SECTION release"
+            exit 1
+          fi
+      - name: Publish the versioned release
+        run: |
+          shopt -s nullglob
+          gh release create "$SECTION-$VERSION" dist/upload/*.zip dist/manifest.json \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$SECTION $VERSION" \
+            --notes-file dist/notes.md \
+            --target "$GITHUB_SHA" \
+            --latest=false
+      - name: Update the rolling manifest
+        run: |
+          if ! gh release view "$SECTION-latest" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$SECTION-latest" --repo "$GITHUB_REPOSITORY" \
+              --title "$SECTION (current manifest)" --target "$GITHUB_SHA" --latest=false \
+              --notes "Current manifest of the $SECTION section, read by the integrations."
+          fi
+          gh release upload "$SECTION-latest" dist/manifest.json --repo "$GITHUB_REPOSITORY" --clobber

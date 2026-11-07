@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Elwinmage/reeftech-catalog/schema/item.schema.json",
+  "title": "Equipment model (equipment/items/<id>/item.json)",
+  "description": "A precise model. It inherits the image, icon, scopes and tasks of its category unless it overrides them.",
+  "type": "object",
+  "required": ["category", "brand", "model"],
+  "additionalProperties": false,
+  "properties": {
+    "category": { "$ref": "common.schema.json#/$defs/id" },
+    "brand": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "model": { "type": "string", "minLength": 1, "maxLength": 96 },
+    "name": {
+      "description": "Display name when it differs from 'brand model'.",
+      "$ref": "common.schema.json#/$defs/i18n"
+    },
+    "scopes": { "$ref": "common.schema.json#/$defs/scopes" },
+    "icon": { "$ref": "common.schema.json#/$defs/icon" },
+    "power_w": {
+      "description": "Nominal power, used to check the consumption of a monitored socket.",
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 20000
+    },
+    "inherit_maintenance": {
+      "description": "Keep the category tasks (overridden by tasks of the same id below).",
+      "type": "boolean",
+      "default": true
+    },
+    "maintenance": {
+      "type": "array",
+      "items": { "$ref": "common.schema.json#/$defs/task_ref" },
+      "uniqueItems": true
+    }
+  }
+}

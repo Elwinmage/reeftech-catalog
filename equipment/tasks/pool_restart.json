@@ -1,0 +1,17 @@
+{
+  "name": {
+    "en": "Pool restart",
+    "fr": "Remise en route de la piscine"
+  },
+  "description": {
+    "en": "Restart the pool after winter.",
+    "fr": "Remettre la piscine en route après l'hiver."
+  },
+  "icon": "mdi:pool",
+  "schedule": {
+    "type": "seasonal",
+    "month": 4,
+    "day": 15,
+    "window_days": 30
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "brand": "Generic",
+  "name": {
+    "en": "Calcium",
+    "fr": "Calcium"
+  },
+  "short_name": "Ca",
+  "kind": "ca",
+  "color": "#e0e0e0",
+  "verified": false
+}

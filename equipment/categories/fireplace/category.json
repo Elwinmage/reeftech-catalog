@@ -1,0 +1,15 @@
+{
+  "name": {
+    "en": "Fireplace or stove",
+    "fr": "Cheminée ou poêle"
+  },
+  "scopes": [
+    "home"
+  ],
+  "icon": "mdi:fireplace",
+  "maintenance": [
+    {
+      "task": "chimney_sweep"
+    }
+  ]
+}

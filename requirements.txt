@@ -1,0 +1,5 @@
+jsonschema>=4.23
+referencing>=0.35
+pytest>=8
+pytest-cov>=6
+ruff==0.15.14

@@ -1,0 +1,11 @@
+{
+  "brand": "Generic",
+  "name": {
+    "en": "Trace elements",
+    "fr": "Oligo-éléments"
+  },
+  "short_name": "Trace",
+  "kind": "trace",
+  "color": "#d8b44a",
+  "verified": false
+}

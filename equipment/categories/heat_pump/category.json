@@ -1,0 +1,16 @@
+{
+  "name": {
+    "en": "Heat pump",
+    "fr": "Pompe à chaleur"
+  },
+  "scopes": [
+    "pool",
+    "home"
+  ],
+  "icon": "mdi:heat-pump",
+  "maintenance": [
+    {
+      "task": "heat_pump_evaporator_clean"
+    }
+  ]
+}

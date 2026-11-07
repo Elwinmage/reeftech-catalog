@@ -1,0 +1,18 @@
+{
+  "name": {
+    "en": "Top-off pump",
+    "fr": "Pompe d'osmolation"
+  },
+  "scopes": [
+    "aquarium"
+  ],
+  "icon": "mdi:water-plus",
+  "maintenance": [
+    {
+      "task": "ato_sensor_clean"
+    },
+    {
+      "task": "pump_clean"
+    }
+  ]
+}

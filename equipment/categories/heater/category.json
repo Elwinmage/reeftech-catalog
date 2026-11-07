@@ -1,0 +1,21 @@
+{
+  "name": {
+    "en": "Heater",
+    "fr": "Chauffage"
+  },
+  "scopes": [
+    "aquarium"
+  ],
+  "icon": "mdi:thermometer",
+  "maintenance": [
+    {
+      "task": "visual_inspection"
+    },
+    {
+      "task": "heater_test"
+    },
+    {
+      "task": "heater_clean"
+    }
+  ]
+}

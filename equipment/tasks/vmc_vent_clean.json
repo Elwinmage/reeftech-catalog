@@ -1,0 +1,20 @@
+{
+  "name": {
+    "en": "Air vents cleaning",
+    "fr": "Nettoyage des bouches"
+  },
+  "description": {
+    "en": "Clean the air inlets and extract vents.",
+    "fr": "Nettoyer les entrées d'air et les bouches d'extraction."
+  },
+  "icon": "mdi:hvac",
+  "schedule": {
+    "type": "interval",
+    "unit": "months",
+    "every": {
+      "default": 12,
+      "min": 6,
+      "max": 12
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": {
+    "en": "Circulation pump",
+    "fr": "Pompe de brassage"
+  },
+  "scopes": [
+    "aquarium"
+  ],
+  "icon": "mdi:fan",
+  "maintenance": [
+    {
+      "task": "pump_clean"
+    }
+  ]
+}

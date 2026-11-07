@@ -1,0 +1,20 @@
+{
+  "brand": "Generic",
+  "name": {
+    "en": "Brine",
+    "fr": "Saumure"
+  },
+  "short_name": "NaCl",
+  "kind": "brine",
+  "color": "#f4f4f4",
+  "concentration_g_l": {
+    "default": 200,
+    "min": 100,
+    "max": 300
+  },
+  "regulation": [
+    "salinity"
+  ],
+  "verified": true,
+  "source": "Home-made: salt mass per litre is set by the user; salinity raise is computed from it"
+}

@@ -1,0 +1,20 @@
+{
+  "name": {
+    "en": "Heater test",
+    "fr": "Test du chauffage"
+  },
+  "description": {
+    "en": "Check the heater still heats and regulates against a reference thermometer.",
+    "fr": "Vérifier que le chauffage chauffe et régule, avec un thermomètre de référence."
+  },
+  "icon": "mdi:thermometer-check",
+  "schedule": {
+    "type": "interval",
+    "unit": "months",
+    "every": {
+      "default": 1,
+      "min": 1,
+      "max": 3
+    }
+  }
+}

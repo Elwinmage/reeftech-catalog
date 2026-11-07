@@ -1,0 +1,15 @@
+{
+  "name": {
+    "en": "Pool filter",
+    "fr": "Filtre de piscine"
+  },
+  "scopes": [
+    "pool"
+  ],
+  "icon": "mdi:filter",
+  "maintenance": [
+    {
+      "task": "pool_filter_backwash"
+    }
+  ]
+}

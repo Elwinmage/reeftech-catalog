@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Elwinmage/reeftech-catalog/schema/supplement.schema.json",
+  "title": "Dosing supplement (supplements/items/<id>/supplement.json)",
+  "type": "object",
+  "required": ["brand", "name", "kind", "verified"],
+  "additionalProperties": false,
+  "properties": {
+    "uid": {
+      "description": "Red Sea cloud supplement uid, when the supplement exists in the ReefBeat library.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "brand": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "name": { "$ref": "common.schema.json#/$defs/i18n" },
+    "short_name": {
+      "description": "Label printed on the bottle visual of the card.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 12
+    },
+    "kind": {
+      "enum": ["kh", "ca", "mg", "trace", "nutrient", "bundle", "brine", "other"]
+    },
+    "color": {
+      "description": "Liquid colour of the bottle visual.",
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$"
+    },
+    "effects": {
+      "description": "Raise of a parameter for 1 mL dosed in 100 L of water. Used by the automatic dose proposal.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["parameter", "unit", "per_ml_per_100l"],
+        "additionalProperties": false,
+        "properties": {
+          "parameter": { "enum": ["kh", "ca", "mg", "no3", "po4", "k", "sr", "i"] },
+          "unit": { "enum": ["dkh", "ppm", "ppb"] },
+          "per_ml_per_100l": { "type": "number", "exclusiveMinimum": 0 }
+        }
+      }
+    },
+    "concentration_g_l": {
+      "description": "Brine only: grams of salt per litre (user-editable in the integration).",
+      "$ref": "common.schema.json#/$defs/bounded_int"
+    },
+    "regulation": {
+      "description": "Regulations this supplement can drive. Only brine offers 'salinity'.",
+      "type": "array",
+      "items": { "enum": ["salinity"] },
+      "uniqueItems": true
+    },
+    "verified": {
+      "description": "Dosing data checked against the manufacturer. Unverified effects are never used for automatic proposals.",
+      "type": "boolean"
+    },
+    "source": {
+      "description": "Where the dosing data comes from (label, manual, URL). Required when verified.",
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 300
+    }
+  }
+}

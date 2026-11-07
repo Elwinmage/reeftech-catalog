@@ -1,0 +1,20 @@
+{
+  "name": {
+    "en": "Softener salt",
+    "fr": "Sel de l'adoucisseur"
+  },
+  "description": {
+    "en": "Refill the regeneration salt.",
+    "fr": "Remettre du sel de régénération."
+  },
+  "icon": "mdi:shaker-outline",
+  "schedule": {
+    "type": "interval",
+    "unit": "weeks",
+    "every": {
+      "default": 4,
+      "min": 1,
+      "max": 8
+    }
+  }
+}

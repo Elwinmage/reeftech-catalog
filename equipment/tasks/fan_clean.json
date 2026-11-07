@@ -1,0 +1,20 @@
+{
+  "name": {
+    "en": "Fan cleaning",
+    "fr": "Nettoyage du ventilateur"
+  },
+  "description": {
+    "en": "Remove dust and salt from the blades and the grid.",
+    "fr": "Retirer poussière et sel des pales et de la grille."
+  },
+  "icon": "mdi:fan",
+  "schedule": {
+    "type": "interval",
+    "unit": "months",
+    "every": {
+      "default": 3,
+      "min": 1,
+      "max": 6
+    }
+  }
+}

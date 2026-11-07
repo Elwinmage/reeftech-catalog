@@ -1,0 +1,18 @@
+{
+  "name": {
+    "en": "Ventilation unit",
+    "fr": "VMC"
+  },
+  "scopes": [
+    "home"
+  ],
+  "icon": "mdi:hvac",
+  "maintenance": [
+    {
+      "task": "vmc_filter_replace"
+    },
+    {
+      "task": "vmc_vent_clean"
+    }
+  ]
+}

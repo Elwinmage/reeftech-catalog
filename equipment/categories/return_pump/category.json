@@ -1,0 +1,15 @@
+{
+  "name": {
+    "en": "Return pump",
+    "fr": "Pompe de remontée"
+  },
+  "scopes": [
+    "aquarium"
+  ],
+  "icon": "mdi:pump",
+  "maintenance": [
+    {
+      "task": "pump_clean"
+    }
+  ]
+}

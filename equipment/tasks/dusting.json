@@ -1,0 +1,20 @@
+{
+  "name": {
+    "en": "Dusting and salt removal",
+    "fr": "Dépoussiérage et sel"
+  },
+  "description": {
+    "en": "Remove dust and salt creep from the device and its connections.",
+    "fr": "Retirer poussière et dépôts de sel de l'appareil et de ses connexions."
+  },
+  "icon": "mdi:broom",
+  "schedule": {
+    "type": "interval",
+    "unit": "months",
+    "every": {
+      "default": 3,
+      "min": 2,
+      "max": 4
+    }
+  }
+}

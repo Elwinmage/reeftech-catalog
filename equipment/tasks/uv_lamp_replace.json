@@ -1,0 +1,20 @@
+{
+  "name": {
+    "en": "UV lamp replacement",
+    "fr": "Remplacement de la lampe UV"
+  },
+  "description": {
+    "en": "Replace the UV lamp: it loses efficiency long before it stops lighting.",
+    "fr": "Remplacer la lampe UV : elle perd son efficacité bien avant de s'éteindre."
+  },
+  "icon": "mdi:lightbulb-on",
+  "schedule": {
+    "type": "interval",
+    "unit": "months",
+    "every": {
+      "default": 12,
+      "min": 6,
+      "max": 12
+    }
+  }
+}

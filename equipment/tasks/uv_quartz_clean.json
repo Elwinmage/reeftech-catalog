@@ -1,0 +1,20 @@
+{
+  "name": {
+    "en": "Quartz sleeve cleaning",
+    "fr": "Nettoyage de la gaine quartz"
+  },
+  "description": {
+    "en": "Clean the quartz sleeve so UV light reaches the water.",
+    "fr": "Nettoyer la gaine quartz pour que les UV atteignent l'eau."
+  },
+  "icon": "mdi:spray-bottle",
+  "schedule": {
+    "type": "interval",
+    "unit": "months",
+    "every": {
+      "default": 6,
+      "min": 3,
+      "max": 12
+    }
+  }
+}

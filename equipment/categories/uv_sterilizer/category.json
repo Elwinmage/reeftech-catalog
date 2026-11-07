@@ -1,0 +1,19 @@
+{
+  "name": {
+    "en": "UV sterilizer",
+    "fr": "Stérilisateur UV"
+  },
+  "scopes": [
+    "aquarium",
+    "pool"
+  ],
+  "icon": "mdi:lightbulb-on",
+  "maintenance": [
+    {
+      "task": "uv_lamp_replace"
+    },
+    {
+      "task": "uv_quartz_clean"
+    }
+  ]
+}

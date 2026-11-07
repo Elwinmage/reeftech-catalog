@@ -1,0 +1,18 @@
+{
+  "name": {
+    "en": "Protein skimmer",
+    "fr": "Écumeur"
+  },
+  "scopes": [
+    "aquarium"
+  ],
+  "icon": "mdi:flask-empty-outline",
+  "maintenance": [
+    {
+      "task": "skimmer_clean"
+    },
+    {
+      "task": "pump_clean"
+    }
+  ]
+}

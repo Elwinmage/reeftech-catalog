@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Elwinmage/reeftech-catalog/schema/category.schema.json",
+  "title": "Equipment category (equipment/categories/<id>/category.json)",
+  "description": "A generic kind of equipment. Its image and tasks are used for any equipment of that kind, so a user without his exact model still gets something useful.",
+  "type": "object",
+  "required": ["name", "scopes", "icon"],
+  "additionalProperties": false,
+  "properties": {
+    "name": { "$ref": "common.schema.json#/$defs/i18n" },
+    "scopes": { "$ref": "common.schema.json#/$defs/scopes" },
+    "icon": { "$ref": "common.schema.json#/$defs/icon" },
+    "maintenance": {
+      "type": "array",
+      "items": { "$ref": "common.schema.json#/$defs/task_ref" },
+      "uniqueItems": true
+    }
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Elwinmage/reeftech-catalog/schema/common.schema.json",
+  "title": "Shared definitions",
+  "$defs": {
+    "id": {
+      "description": "Stable identifier. Never renamed once released: configurations point to it.",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[-_][a-z0-9]+)*$",
+      "maxLength": 64
+    },
+    "i18n": {
+      "description": "Text per language (BCP-47 short tag). English is mandatory and used as fallback.",
+      "type": "object",
+      "required": ["en"],
+      "propertyNames": { "pattern": "^[a-z]{2}(-[A-Z]{2})?$" },
+      "additionalProperties": { "type": "string", "minLength": 1, "maxLength": 400 }
+    },
+    "scope": {
+      "description": "Where the equipment lives. reef_maintenance keeps 'aquarium', maintenance_hub keeps all.",
+      "enum": ["aquarium", "pool", "home"]
+    },
+    "scopes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/scope" },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "icon": {
+      "description": "Material Design Icon used when no image is shown.",
+      "type": "string",
+      "pattern": "^mdi:[a-z0-9-]+$"
+    },
+    "bounded_int": {
+      "type": "object",
+      "required": ["default", "min", "max"],
+      "additionalProperties": false,
+      "properties": {
+        "default": { "type": "integer", "minimum": 1 },
+        "min": { "type": "integer", "minimum": 1 },
+        "max": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "schedule": {
+      "description": "When a task is due. 'interval' repeats after a period; 'seasonal' is anchored to a date each year.",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["type", "unit", "every"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "interval" },
+            "unit": { "enum": ["days", "weeks", "months", "years"] },
+            "every": { "$ref": "#/$defs/bounded_int" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "month", "day"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "seasonal" },
+            "month": { "type": "integer", "minimum": 1, "maximum": 12 },
+            "day": { "type": "integer", "minimum": 1, "maximum": 31 },
+            "window_days": {
+              "description": "Days before the anchor date when the task becomes due.",
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 120
+            }
+          }
+        }
+      ]
+    },
+    "task_ref": {
+      "description": "A task of the task library attached to a category or an item, with optional overrides.",
+      "type": "object",
+      "required": ["task"],
+      "additionalProperties": false,
+      "properties": {
+        "task": { "$ref": "#/$defs/id" },
+        "schedule": { "$ref": "#/$defs/schedule" },
+        "regulatory": { "type": "boolean" }
+      }
+    }
+  }
+}

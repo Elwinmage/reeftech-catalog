@@ -1,0 +1,20 @@
+{
+  "name": {
+    "en": "Pump cleaning",
+    "fr": "Nettoyage de la pompe"
+  },
+  "description": {
+    "en": "Clean the impeller, its shaft and the housing; descale if needed.",
+    "fr": "Nettoyer la turbine, son axe et le corps ; détartrer si besoin."
+  },
+  "icon": "mdi:pump",
+  "schedule": {
+    "type": "interval",
+    "unit": "months",
+    "every": {
+      "default": 3,
+      "min": 1,
+      "max": 6
+    }
+  }
+}
