@@ -1,0 +1,11 @@
+{
+  "domain": "catalog_demo",
+  "name": "Catalog demo",
+  "codeowners": [],
+  "config_flow": true,
+  "dependencies": ["http"],
+  "documentation": "https://github.com/Elwinmage/reeftech-catalog",
+  "iot_class": "cloud_polling",
+  "requirements": [],
+  "version": "1.2.0"
+}

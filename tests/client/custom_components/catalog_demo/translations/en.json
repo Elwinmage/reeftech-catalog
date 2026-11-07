@@ -1,0 +1,20 @@
+{
+  "exceptions": {
+    "catalog_unknown": {
+      "message": "The catalog has not been checked yet."
+    },
+    "catalog_incompatible": {
+      "message": "Catalog {version} needs version {minimum} of the integration or newer."
+    },
+    "catalog_install_failed": {
+      "message": "Catalog update failed: {error}"
+    }
+  },
+  "entity": {
+    "switch": {
+      "catalog_auto_update": {
+        "name": "Automatic update"
+      }
+    }
+  }
+}

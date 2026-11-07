@@ -9,5 +9,13 @@
     500
   ],
   "kind": "trace",
-  "verified": false
+  "effects": [
+    {
+      "parameter": "k",
+      "unit": "ppm",
+      "per_ml_per_100l": 1.009
+    }
+  ],
+  "verified": true,
+  "source": "Tropic Marin label: 15 mL in 40 US gallons (Potassium: 10 ppm), converted to 1 mL in 100 L (1 meq/L = 2.8 dKH)"
 }

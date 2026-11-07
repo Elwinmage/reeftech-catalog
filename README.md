@@ -112,6 +112,7 @@ to read the section (`min_integration`).
 
 ```
 pip install -r requirements.txt
+pre-commit install                  # same checks as the CI, before each commit
 python scripts/validate.py          # errors fail, warnings are listed
 python scripts/validate.py --strict # warnings fail too
 pytest --cov=scripts --cov=client

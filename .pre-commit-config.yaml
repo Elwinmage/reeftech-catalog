@@ -1,0 +1,38 @@
+# Same checks as .github/workflows/ci.yml, run before each commit.
+# Needs the requirements installed: pip install -r requirements.txt
+fail_fast: true
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: Ruff (lint)
+        entry: ruff check --fix
+        language: system
+        types: [python]
+
+      - id: ruff-format
+        name: Ruff (format)
+        entry: ruff format
+        language: system
+        types: [python]
+
+      - id: validate-catalog
+        name: Catalog checks
+        entry: python scripts/validate.py
+        language: system
+        pass_filenames: false
+        files: ^(equipment|supplements|schema|scripts)/
+
+      - id: pyright
+        name: Pyright
+        entry: pyright tests/client/custom_components/catalog_demo scripts
+        language: system
+        pass_filenames: false
+        types: [python]
+
+      - id: pytest
+        name: Tests (100 % coverage)
+        entry: pytest --cov=scripts --cov=client --cov-fail-under=100 -q
+        language: system
+        pass_filenames: false
+        files: ^(client|scripts|schema|equipment|supplements|tests)/

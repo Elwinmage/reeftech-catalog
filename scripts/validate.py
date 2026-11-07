@@ -39,6 +39,8 @@ EFFECT_BOUNDS = {
     ("no3", "ppm"): (0.001, 10.0),
     ("po4", "ppm"): (0.0001, 1.0),
     ("i", "ppb"): (0.01, 100.0),
+    ("i", "ppm"): (0.00001, 0.1),
+    ("fe", "ppm"): (0.00001, 0.1),
 }
 # Brine concentration bounds (g/L); natural sea water is about 35 g/L and
 # salt stops dissolving around 360 g/L.

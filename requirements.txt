@@ -5,3 +5,4 @@ pytest-cov>=6
 pytest-homeassistant-custom-component
 ruff==0.15.14
 pyright
+pre-commit

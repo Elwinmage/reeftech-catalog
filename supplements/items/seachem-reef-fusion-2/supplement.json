@@ -13,5 +13,13 @@
     4000
   ],
   "kind": "kh",
-  "verified": false
+  "effects": [
+    {
+      "parameter": "kh",
+      "unit": "dkh",
+      "per_ml_per_100l": 0.123
+    }
+  ],
+  "verified": true,
+  "source": "Seachem label (Reef Fusion 2: 1 mL in 25 L, 0.176 meq/L), converted to 1 mL in 100 L (1 meq/L = 2.8 dKH)"
 }

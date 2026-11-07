@@ -63,13 +63,16 @@ async def async_setup_entry(hass, entry, async_add_entities):
 ```
 
 `manifest.json` needs `"dependencies": ["http"]` (websocket_api comes with
-it). Exception messages to add to `strings.json` and the translations:
+it). Messages to add to `strings.json` and the translations:
 
 ```json
 "exceptions": {
   "catalog_unknown": { "message": "The catalog has not been checked yet." },
   "catalog_incompatible": { "message": "Catalog {version} needs version {minimum} of the integration or newer." },
   "catalog_install_failed": { "message": "Catalog update failed: {error}" }
+},
+"entity": {
+  "switch": { "catalog_auto_update": { "name": "Automatic update" } }
 }
 ```
 
@@ -90,7 +93,14 @@ it). Exception messages to add to `strings.json` and the translations:
 7. One config entry hosts the device *<title>* with `update.<title>` and
    `switch.<title>_automatic_update` (on by default, kept in
    `.storage/<domain>.catalog`). When that entry is removed while others stay,
-   the next one is reloaded and hosts them.
+   the next one is reloaded and hosts them. An integration with several
+   entries of the same kind (redsea: one per doser) gives the catalog an
+   entry of its own instead, created by a config flow step, so that its
+   device does not hang on one of them.
+8. Each change of the catalog (loaded, installed, stopped) is also sent as
+   the dispatcher signal `signal_catalog_changed(domain)`: entities of other
+   entries, possibly set up before the catalog, follow it with
+   `async_dispatcher_connect`.
 
 ### Folders
 

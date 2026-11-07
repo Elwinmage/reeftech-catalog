@@ -13,5 +13,13 @@
     4000
   ],
   "kind": "ca",
-  "verified": false
+  "effects": [
+    {
+      "parameter": "ca",
+      "unit": "ppm",
+      "per_ml_per_100l": 1.0
+    }
+  ],
+  "verified": true,
+  "source": "Seachem label (Reef Fusion 1: 1 mL in 25 L, 4 mg/L), converted to 1 mL in 100 L (1 meq/L = 2.8 dKH)"
 }

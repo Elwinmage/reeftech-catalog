@@ -13,5 +13,13 @@
     20000
   ],
   "kind": "kh",
-  "verified": false
+  "effects": [
+    {
+      "parameter": "kh",
+      "unit": "dkh",
+      "per_ml_per_100l": 0.084
+    }
+  ],
+  "verified": true,
+  "source": "Brightwell label: 1 mL in 1 US gallon (3.785 L) (Reef Code B: 2.22 dKH), converted to 1 mL in 100 L (1 meq/L = 2.8 dKH)"
 }

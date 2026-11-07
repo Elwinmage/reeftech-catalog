@@ -11,5 +11,13 @@
     2000
   ],
   "kind": "mg",
-  "verified": false
+  "effects": [
+    {
+      "parameter": "mg",
+      "unit": "ppm",
+      "per_ml_per_100l": 1.0
+    }
+  ],
+  "verified": true,
+  "source": "Aquaforest label: 10 mL in 100 L (Mg Plus: 10 ppm), converted to 1 mL in 100 L (1 meq/L = 2.8 dKH)"
 }

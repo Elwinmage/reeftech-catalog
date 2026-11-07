@@ -12,5 +12,13 @@
     2000
   ],
   "kind": "ca",
-  "verified": false
+  "effects": [
+    {
+      "parameter": "ca",
+      "unit": "ppm",
+      "per_ml_per_100l": 1.6
+    }
+  ],
+  "verified": true,
+  "source": "Seachem label (Reef Complete: 5 mL in 80 L, 10 mg/L), converted to 1 mL in 100 L (1 meq/L = 2.8 dKH)"
 }
