@@ -67,15 +67,26 @@ configurations refer to them, so an entry is never renamed, only removed.
 
 ## Supplements
 
-- `kind`: `kh`, `ca`, `mg`, `trace`, `nutrient`, `bundle`, `brine`, `other`.
-- `uid`: Red Sea cloud uid, when the supplement exists in the ReefBeat library.
+The 95 supplements of ha-reef-card (12 brands, with their bottle visuals) live
+here; the card no longer embeds them.
+
+- `uid`: Red Sea cloud uid (the card and redsea look supplements up by it);
+  `fullname`: `<brand> - <name>` as known by the ReefBeat library. Both are
+  unique and never change.
+- `name` is the product name as printed (not translated); `display_name` and
+  `short_name` are the labels of the dosing head and of the bottle visual.
+- `sizes`: bottle sizes in mL offered for the container volume.
+- `kind`: `kh`, `ca`, `mg`, `trace`, `nutrient`, `food`, `bundle`, `brine`,
+  `other`.
+- `bundle` (kind `bundle` only): its parts, each one another supplement of the
+  catalog, with a slot and a dosing ratio to part 1 (Red Sea ReefCare).
 - `effects`: raise of a parameter for **1 mL in 100 L**, used by the automatic
   dose proposal. Values outside plausible bounds are rejected by the checks.
 - `verified`: dosing data checked against the manufacturer, with a `source`.
   Unverified effects are never used for automatic proposals.
-- `brine` is the only kind with `concentration_g_l` and the only one allowed
-  to drive salinity regulation (`"regulation": ["salinity"]`); its raise is
-  computed from the concentration, so it has no `effects`.
+- `brine` (DIY Brine) is the only kind with `concentration_g_l` and the only
+  one allowed to drive salinity regulation (`"regulation": ["salinity"]`); its
+  raise is computed from the concentration, so it has no `effects`.
 
 ## Releases
 
@@ -101,8 +112,9 @@ python scripts/validate.py --strict # warnings fail too
 pytest --cov=scripts
 ```
 
-Warnings are missing translations (`en` is mandatory, `fr de es it pl pt`
-expected), missing visuals and unverified dosing data. See
+Warnings are missing translations of tasks and equipment (`en` is
+mandatory, `fr de es it pl pt` expected), missing visuals and unverified
+dosing data. See
 [CONTRIBUTING.md](CONTRIBUTING.md) to add an entry.
 
 ## License

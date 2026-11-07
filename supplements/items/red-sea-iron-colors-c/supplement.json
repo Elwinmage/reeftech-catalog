@@ -1,0 +1,15 @@
+{
+  "uid": "c7a26034-8e40-41bb-bfb5-169089470f1e",
+  "brand": "Red Sea",
+  "name": "Iron (Colors C)",
+  "fullname": "Red Sea - Iron (Colors C)",
+  "display_name": "Iron",
+  "short_name": "Fe",
+  "made_by_redsea": true,
+  "sizes": [
+    500,
+    100
+  ],
+  "kind": "trace",
+  "verified": false
+}

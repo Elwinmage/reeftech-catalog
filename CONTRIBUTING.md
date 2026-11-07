@@ -13,7 +13,8 @@
 
 ## Add a supplement
 
-Create `supplements/items/<brand>-<name>/supplement.json`. Dosing data
+Create `supplements/items/<brand>-<name>/supplement.json` with its Red Sea
+`uid` and `fullname` when the supplement exists in the ReefBeat library. Dosing data
 (`effects`) must come from the manufacturer: give the `source` and set
 `verified` to `true` only once it has been checked.
 

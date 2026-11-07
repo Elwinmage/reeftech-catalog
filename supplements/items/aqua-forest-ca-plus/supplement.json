@@ -1,0 +1,15 @@
+{
+  "uid": "9ea6c9f2-b6f3-41ee-9370-06457f286fe5",
+  "brand": "Aqua Forest",
+  "name": "Ca Plus",
+  "fullname": "Aqua Forest - Ca Plus",
+  "display_name": "Calcium",
+  "short_name": "Ca",
+  "made_by_redsea": false,
+  "sizes": [
+    150,
+    2000
+  ],
+  "kind": "ca",
+  "verified": false
+}

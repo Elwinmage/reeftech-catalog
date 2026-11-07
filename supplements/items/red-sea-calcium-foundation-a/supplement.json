@@ -1,0 +1,17 @@
+{
+  "uid": "7d67412c-fde0-44d4-882a-dc8746fd4acb",
+  "brand": "Red Sea",
+  "name": "Calcium (Foundation A)",
+  "fullname": "Red Sea - Calcium (Foundation A)",
+  "display_name": "Calcium",
+  "short_name": "Ca",
+  "made_by_redsea": true,
+  "sizes": [
+    5000,
+    1000,
+    500,
+    250
+  ],
+  "kind": "ca",
+  "verified": false
+}

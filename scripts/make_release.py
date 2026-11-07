@@ -63,6 +63,7 @@ def _summary(root: Path, section: str, entry: Entry) -> dict:
     elif entry.kind == "supplement":
         data = read_json(entry.files["supplement.json"])
         summary["supplement_kind"] = data["kind"]
+        summary["fullname"] = data["fullname"]
         if "uid" in data:
             summary["uid"] = data["uid"]
     return summary

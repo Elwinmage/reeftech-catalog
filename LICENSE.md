@@ -4,8 +4,10 @@
 
 Everything under `equipment/` and `supplements/` is licensed under the
 [Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/)
-license (CC BY 4.0). Brand and model names belong to their owners and are used
-only to identify equipment.
+license (CC BY 4.0), except the supplement bottle visuals imported from
+ha-reef-card (`supplements/items/*/image.webp`, `thumb.webp`), which keep
+the status they had there. Brand and model names belong to their owners and
+are used only to identify equipment.
 
 ## Scripts and schemas
 

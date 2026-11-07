@@ -46,7 +46,8 @@ def root(tmp_path: Path) -> Path:
         tmp_path / "supplements/items/brine/supplement.json",
         {
             "brand": "Generic",
-            "name": {"en": "Brine"},
+            "name": "Brine",
+            "fullname": "DIY - Brine",
             "kind": "brine",
             "concentration_g_l": {"default": 200, "min": 100, "max": 300},
             "regulation": ["salinity"],
@@ -133,7 +134,7 @@ def test_invalid_json(root):
 
 
 def supplement(root: Path, name: str, **data) -> None:
-    base = {"brand": "B", "name": {"en": name}, "kind": "kh", "verified": False}
+    base = {"brand": "B", "name": name, "fullname": f"B - {name}", "kind": "kh", "verified": False}
     dump(root / f"supplements/items/{name}/supplement.json", base | data)
 
 
@@ -147,6 +148,21 @@ def test_supplement_rules(root):
     supplement(root, "trusted", verified=True)
     supplement(root, "dup1", uid="abc")
     supplement(root, "dup2", uid="abc")
+    supplement(root, "samename", fullname="B - dup1")
+    supplement(
+        root, "notbundle", bundle=[{"slot": 1, "part": "dup1", "ratio": 1}, {"slot": 2, "part": "dup2", "ratio": 1}]
+    )
+    supplement(root, "emptybundle", kind="bundle")
+    supplement(
+        root,
+        "pack",
+        kind="bundle",
+        bundle=[
+            {"slot": 1, "part": "dup1", "ratio": 1},
+            {"slot": 1, "part": "ghost", "ratio": 1},
+            {"slot": 2, "part": "emptybundle", "ratio": 0.5},
+        ],
+    )
     found = errors(root)
     for expected in (
         "only a brine can drive salinity",
@@ -157,6 +173,12 @@ def test_supplement_rules(root):
         "unit 'ppm' not supported for 'kh'",
         "verified dosing data needs a source",
         "uid 'abc' already used",
+        "fullname 'B - dup1' already used",
+        "only a supplement of kind 'bundle' has parts",
+        "a bundle needs its parts",
+        "bundle slot used twice",
+        "unknown bundle part 'ghost'",
+        "bundle part 'emptybundle' is itself a bundle",
     ):
         assert any(expected in e for e in found), expected
 
@@ -269,7 +291,8 @@ def test_structure_errors(tmp_path, root):
         root / "supplements/items/salty-fx/supplement.json",
         {
             "brand": "B",
-            "name": {"en": "B"},
+            "name": "B",
+            "fullname": "B - salty",
             "kind": "brine",
             "verified": False,
             "concentration_g_l": {"default": 200, "min": 100, "max": 300},

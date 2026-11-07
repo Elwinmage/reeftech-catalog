@@ -1,0 +1,17 @@
+{
+  "uid": "fca74872-947b-4968-9687-e3c4a43723e1",
+  "brand": "Brightwell",
+  "name": "Calcion",
+  "fullname": "Brightwell - Calcion",
+  "display_name": "Calcium",
+  "short_name": "Ca",
+  "made_by_redsea": false,
+  "sizes": [
+    250,
+    500,
+    2000,
+    20000
+  ],
+  "kind": "ca",
+  "verified": false
+}

@@ -1,0 +1,17 @@
+{
+  "uid": "c857b721-1652-4b89-8c68-d14c3f14f08e",
+  "brand": "Brightwell",
+  "name": "Reef Code A",
+  "fullname": "Brightwell - Reef Code A",
+  "display_name": "Calcium",
+  "short_name": "Ca",
+  "made_by_redsea": false,
+  "sizes": [
+    250,
+    500,
+    2000,
+    20000
+  ],
+  "kind": "ca",
+  "verified": false
+}

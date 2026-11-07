@@ -1,0 +1,17 @@
+{
+  "uid": "7711655c-fd34-4fa3-99e8-ac76403248b1",
+  "brand": "Seachem",
+  "name": "Reef Fusion 1",
+  "fullname": "Seachem - Reef Fusion 1",
+  "display_name": "Calcium",
+  "short_name": "Ca",
+  "made_by_redsea": false,
+  "sizes": [
+    500,
+    1000,
+    2000,
+    4000
+  ],
+  "kind": "ca",
+  "verified": false
+}

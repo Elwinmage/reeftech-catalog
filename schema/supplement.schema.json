@@ -3,25 +3,107 @@
   "$id": "https://github.com/Elwinmage/reeftech-catalog/schema/supplement.schema.json",
   "title": "Dosing supplement (supplements/items/<id>/supplement.json)",
   "type": "object",
-  "required": ["brand", "name", "kind", "verified"],
+  "required": [
+    "brand",
+    "name",
+    "fullname",
+    "kind",
+    "verified"
+  ],
   "additionalProperties": false,
   "properties": {
     "uid": {
-      "description": "Red Sea cloud supplement uid, when the supplement exists in the ReefBeat library.",
+      "description": "Red Sea cloud supplement uid (or a stable id for supplements unknown to the ReefBeat library). The card and the integration look supplements up by it.",
       "type": "string",
       "minLength": 1,
       "maxLength": 64
     },
-    "brand": { "type": "string", "minLength": 1, "maxLength": 64 },
-    "name": { "$ref": "common.schema.json#/$defs/i18n" },
+    "brand": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "name": {
+      "description": "Product name as printed by the manufacturer (not translated).",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 96
+    },
+    "fullname": {
+      "description": "'<brand> - <name>' as known by the ReefBeat library; the card matches device data on it.",
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 160
+    },
+    "display_name": {
+      "description": "Shorter name shown on the dosing head.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40
+    },
     "short_name": {
       "description": "Label printed on the bottle visual of the card.",
       "type": "string",
       "minLength": 1,
       "maxLength": 12
     },
+    "made_by_redsea": {
+      "description": "Red Sea product (shown as such by the ReefBeat app).",
+      "type": "boolean",
+      "default": false
+    },
+    "sizes": {
+      "description": "Bottle sizes in mL offered for the container volume.",
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 100000
+      },
+      "uniqueItems": true,
+      "minItems": 1
+    },
+    "bundle": {
+      "description": "Bundle only: its parts, each one another supplement of the catalog, with its dosing ratio to part 1.",
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": [
+          "slot",
+          "part",
+          "ratio"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "slot": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4
+          },
+          "part": {
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "ratio": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 10
+          }
+        }
+      }
+    },
     "kind": {
-      "enum": ["kh", "ca", "mg", "trace", "nutrient", "bundle", "brine", "other"]
+      "enum": [
+        "kh",
+        "ca",
+        "mg",
+        "trace",
+        "nutrient",
+        "food",
+        "bundle",
+        "brine",
+        "other"
+      ]
     },
     "color": {
       "description": "Liquid colour of the bottle visual.",
@@ -33,12 +115,36 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["parameter", "unit", "per_ml_per_100l"],
+        "required": [
+          "parameter",
+          "unit",
+          "per_ml_per_100l"
+        ],
         "additionalProperties": false,
         "properties": {
-          "parameter": { "enum": ["kh", "ca", "mg", "no3", "po4", "k", "sr", "i"] },
-          "unit": { "enum": ["dkh", "ppm", "ppb"] },
-          "per_ml_per_100l": { "type": "number", "exclusiveMinimum": 0 }
+          "parameter": {
+            "enum": [
+              "kh",
+              "ca",
+              "mg",
+              "no3",
+              "po4",
+              "k",
+              "sr",
+              "i"
+            ]
+          },
+          "unit": {
+            "enum": [
+              "dkh",
+              "ppm",
+              "ppb"
+            ]
+          },
+          "per_ml_per_100l": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          }
         }
       }
     },
@@ -49,7 +155,11 @@
     "regulation": {
       "description": "Regulations this supplement can drive. Only brine offers 'salinity'.",
       "type": "array",
-      "items": { "enum": ["salinity"] },
+      "items": {
+        "enum": [
+          "salinity"
+        ]
+      },
       "uniqueItems": true
     },
     "verified": {

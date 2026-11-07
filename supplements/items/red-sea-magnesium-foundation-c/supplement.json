@@ -1,0 +1,17 @@
+{
+  "uid": "f524734e-8651-496e-b09b-640b40fc8bab",
+  "brand": "Red Sea",
+  "name": "Magnesium (Foundation C)",
+  "fullname": "Red Sea - Magnesium (Foundation C)",
+  "display_name": "Magnesium",
+  "short_name": "Mg",
+  "made_by_redsea": true,
+  "sizes": [
+    5000,
+    1000,
+    500,
+    250
+  ],
+  "kind": "mg",
+  "verified": false
+}

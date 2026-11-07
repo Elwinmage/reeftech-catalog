@@ -1,0 +1,17 @@
+{
+  "uid": "bd79c239-f189-4684-9ca9-8d0ca8a9bab5",
+  "brand": "Brightwell",
+  "name": "Ferrion",
+  "fullname": "Brightwell - Ferrion",
+  "display_name": "Iron",
+  "short_name": "Fe",
+  "made_by_redsea": false,
+  "sizes": [
+    250,
+    500,
+    2000,
+    20000
+  ],
+  "kind": "trace",
+  "verified": false
+}

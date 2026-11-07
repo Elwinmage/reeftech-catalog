@@ -1,0 +1,15 @@
+{
+  "uid": "deb3a943-68a5-40a9-860b-e6d259eee947",
+  "brand": "Aqua Forest",
+  "name": "Mg Plus",
+  "fullname": "Aqua Forest - Mg Plus",
+  "display_name": "Magnesium",
+  "short_name": "Mg",
+  "made_by_redsea": false,
+  "sizes": [
+    150,
+    2000
+  ],
+  "kind": "mg",
+  "verified": false
+}

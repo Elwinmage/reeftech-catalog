@@ -1,0 +1,17 @@
+{
+  "uid": "fb5347b5-9764-445e-ac6a-513700f6740d",
+  "brand": "Brightwell",
+  "name": "Reef Code B",
+  "fullname": "Brightwell - Reef Code B",
+  "display_name": "KH",
+  "short_name": "KH",
+  "made_by_redsea": false,
+  "sizes": [
+    250,
+    500,
+    2000,
+    20000
+  ],
+  "kind": "kh",
+  "verified": false
+}

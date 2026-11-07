@@ -175,6 +175,8 @@ def _check_equipment(root: Path, report: Report, validators) -> None:
 
 def _check_supplements(root: Path, report: Report, validators) -> None:
     uids: dict[str, str] = {}
+    fullnames: dict[str, str] = {}
+    supplements: dict[str, dict] = {}
     for entry in collect(root, "supplements"):
         eid = entry_id(entry)
         where = f"supplements/items/{eid}"
@@ -184,15 +186,21 @@ def _check_supplements(root: Path, report: Report, validators) -> None:
         data = _load(report, where, entry.files["supplement.json"], validators["supplement"])
         if data is None:
             continue
-        _check_i18n(report, where, data["name"])
+        supplements[eid] = data
         if not any(n.startswith("image.") for n in entry.files):
             report.warn(where, "no bottle image, the generic bottle will be shown")
 
-        uid = data.get("uid")
-        if uid is not None:
-            if uid in uids:
-                report.error(where, f"uid {uid!r} already used by {uids[uid]!r}")
-            uids[uid] = eid
+        for key, seen_values in (("uid", uids), ("fullname", fullnames)):
+            value = data.get(key)
+            if value is None:
+                continue
+            if value in seen_values:
+                report.error(where, f"{key} {value!r} already used by {seen_values[value]!r}")
+            seen_values[value] = eid
+        if "bundle" in data and data["kind"] != "bundle":
+            report.error(where, "only a supplement of kind 'bundle' has parts")
+        if data["kind"] == "bundle" and "bundle" not in data:
+            report.error(where, "a bundle needs its parts")
 
         brine = data["kind"] == "brine"
         if brine and "concentration_g_l" not in data:
@@ -231,6 +239,17 @@ def _check_supplements(root: Path, report: Report, validators) -> None:
             report.error(where, "verified dosing data needs a source")
         if data.get("effects") and not data["verified"]:
             report.warn(where, "effects not verified: not used for automatic dose proposals")
+
+    for eid, data in supplements.items():
+        slots = [part["slot"] for part in data.get("bundle", [])]
+        if len(slots) != len(set(slots)):
+            report.error(f"supplements/items/{eid}", "bundle slot used twice")
+        for part in data.get("bundle", []):
+            target = supplements.get(part["part"])
+            if target is None:
+                report.error(f"supplements/items/{eid}", f"unknown bundle part {part['part']!r}")
+            elif target["kind"] == "bundle":
+                report.error(f"supplements/items/{eid}", f"bundle part {part['part']!r} is itself a bundle")
 
 
 def validate(root: Path) -> Report:

@@ -1,0 +1,15 @@
+{
+  "uid": "2f386917-54bd-4dd4-aa8b-9d1fea37edc5",
+  "brand": "Red Sea",
+  "name": "Potassium (Colors B)",
+  "fullname": "Red Sea - Potassium (Colors B)",
+  "display_name": "Potassium",
+  "short_name": "K ",
+  "made_by_redsea": true,
+  "sizes": [
+    500,
+    100
+  ],
+  "kind": "trace",
+  "verified": false
+}

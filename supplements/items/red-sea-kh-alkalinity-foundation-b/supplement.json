@@ -1,0 +1,17 @@
+{
+  "uid": "76830db3-a0bd-459a-9974-76a57d026893",
+  "brand": "Red Sea",
+  "name": "KH/Alkalinity (Foundation B)",
+  "fullname": "Red Sea - KH/Alkalinity (Foundation B)",
+  "display_name": "KH",
+  "short_name": "KH",
+  "made_by_redsea": true,
+  "sizes": [
+    5000,
+    1000,
+    500,
+    250
+  ],
+  "kind": "kh",
+  "verified": false
+}

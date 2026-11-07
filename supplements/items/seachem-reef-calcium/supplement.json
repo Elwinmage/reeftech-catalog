@@ -1,0 +1,15 @@
+{
+  "uid": "20d65a7e-d12c-4185-a809-97aac782aca1",
+  "brand": "Seachem",
+  "name": "Reef Calcium",
+  "fullname": "Seachem - Reef Calcium",
+  "display_name": "Calcium",
+  "short_name": "Ca",
+  "made_by_redsea": false,
+  "sizes": [
+    250,
+    500
+  ],
+  "kind": "ca",
+  "verified": false
+}

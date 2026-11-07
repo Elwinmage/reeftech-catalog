@@ -1,0 +1,15 @@
+{
+  "uid": "e391e8d1-0d4c-4355-8887-9231500703ef",
+  "brand": "Aqua Forest",
+  "name": "KH Plus",
+  "fullname": "Aqua Forest - KH Plus",
+  "display_name": "Alkalinity",
+  "short_name": "KH",
+  "made_by_redsea": false,
+  "sizes": [
+    150,
+    2000
+  ],
+  "kind": "kh",
+  "verified": false
+}

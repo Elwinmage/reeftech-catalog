@@ -1,0 +1,17 @@
+{
+  "uid": "a72f14b4-7a0d-4582-b043-f0c0f9cb51eb",
+  "brand": "Brightwell",
+  "name": "Hydrate - MG",
+  "fullname": "Brightwell - Hydrate - MG",
+  "display_name": "Magnesium",
+  "short_name": "Mg",
+  "made_by_redsea": false,
+  "sizes": [
+    250,
+    500,
+    2000,
+    20000
+  ],
+  "kind": "mg",
+  "verified": false
+}

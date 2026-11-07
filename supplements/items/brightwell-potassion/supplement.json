@@ -1,0 +1,17 @@
+{
+  "uid": "2033a72f-1d00-4974-b1f5-bc7ee38858c4",
+  "brand": "Brightwell",
+  "name": "Potassion",
+  "fullname": "Brightwell - Potassion",
+  "display_name": "Potassium",
+  "short_name": "K",
+  "made_by_redsea": false,
+  "sizes": [
+    250,
+    500,
+    2000,
+    20000
+  ],
+  "kind": "trace",
+  "verified": false
+}
