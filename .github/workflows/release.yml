@@ -1,11 +1,14 @@
 name: Release
 
-# Publishes one section of the catalog. Each section has:
+# Publishes the catalog, one section or both. Each section has:
 #   - versioned releases '<section>-<version>' holding the archives that
 #     changed in that version (never delete them: later manifests point to them);
 #   - a rolling release '<section>-latest' holding only the current
 #     manifest.json, read by the integrations at a fixed URL:
 #     https://github.com/<repo>/releases/download/<section>-latest/manifest.json
+#
+# With 'all', a section without any change since its previous release is
+# skipped; with a single section, it is an error.
 
 on:
   workflow_dispatch:
@@ -14,26 +17,29 @@ on:
         description: "Section to publish"
         required: true
         type: choice
-        options: [equipment, supplements]
+        default: all
+        options: [all, equipment, supplements]
       version:
         description: "Release version (ex: 2026.11.0)"
         required: true
       min_integration:
-        description: "Space separated name=version (ex: reef_maintenance=0.3.0 maintenance_hub=0.2.0); empty keeps the previous ones"
+        description: "Space separated name=version (ex: redsea=2.1.0 reef_maintenance=0.3.0); each section keeps its own consumers; empty keeps the previous ones"
         required: false
         default: ""
 
 permissions:
   contents: write
 
+# One release run at a time: each one reads the manifest the previous wrote
+concurrency:
+  group: catalog-release
+  cancel-in-progress: false
+
 jobs:
-  release:
+  check:
     runs-on: ubuntu-latest
-    env:
-      GH_TOKEN: ${{ github.token }}
-      SECTION: ${{ inputs.section }}
-      VERSION: ${{ inputs.version }}
-      MIN_INTEGRATION: ${{ inputs.min_integration }}
+    outputs:
+      sections: ${{ steps.sections.outputs.sections }}
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -43,6 +49,38 @@ jobs:
         run: pip install -r requirements.txt
       - name: Check the catalog
         run: python scripts/validate.py
+      - name: Sections to publish
+        id: sections
+        env:
+          SECTION: ${{ inputs.section }}
+        run: |
+          if [ "$SECTION" = all ]; then
+            echo 'sections=["equipment","supplements"]' >> "$GITHUB_OUTPUT"
+          else
+            echo "sections=[\"$SECTION\"]" >> "$GITHUB_OUTPUT"
+          fi
+
+  release:
+    needs: check
+    runs-on: ubuntu-latest
+    strategy:
+      # A section that fails does not stop the other one
+      fail-fast: false
+      matrix:
+        section: ${{ fromJSON(needs.check.outputs.sections) }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SECTION: ${{ matrix.section }}
+      ALL: ${{ inputs.section == 'all' }}
+      VERSION: ${{ inputs.version }}
+      MIN_INTEGRATION: ${{ inputs.min_integration }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
       - name: Previous manifest
         run: |
           mkdir -p prev
@@ -54,13 +92,25 @@ jobs:
           for item in $MIN_INTEGRATION; do args+=(--min-integration "$item"); done
           python scripts/make_release.py "$SECTION" "$VERSION" --out dist \
             --previous prev/manifest.json "${args[@]}"
-      - name: Stop when nothing changed
+      - name: Anything to publish
+        id: changes
         run: |
-          if grep -q "No content change." dist/notes.md && [ -z "$MIN_INTEGRATION" ]; then
-            echo "::error::No content change since the previous $SECTION release"
-            exit 1
+          publish=true
+          if grep -q "No content change." dist/notes.md && \
+             { [ ! -f prev/manifest.json ] || cmp -s \
+               <(python -c "import json,sys; print(json.load(open(sys.argv[1]))['min_integration'])" prev/manifest.json) \
+               <(python -c "import json,sys; print(json.load(open(sys.argv[1]))['min_integration'])" dist/manifest.json); }; then
+            if [ "$ALL" = true ]; then
+              echo "::notice::$SECTION: no change since its previous release, skipped"
+              publish=false
+            else
+              echo "::error::No content change since the previous $SECTION release"
+              exit 1
+            fi
           fi
+          echo "publish=$publish" >> "$GITHUB_OUTPUT"
       - name: Publish the versioned release
+        if: steps.changes.outputs.publish == 'true'
         run: |
           shopt -s nullglob
           gh release create "$SECTION-$VERSION" dist/upload/*.zip dist/manifest.json \
@@ -70,6 +120,7 @@ jobs:
             --target "$GITHUB_SHA" \
             --latest=false
       - name: Update the rolling manifest
+        if: steps.changes.outputs.publish == 'true'
         run: |
           if ! gh release view "$SECTION-latest" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release create "$SECTION-latest" --repo "$GITHUB_REPOSITORY" \

@@ -1,38 +1,48 @@
-# Same checks as .github/workflows/ci.yml, run before each commit.
-# Needs the requirements installed: pip install -r requirements.txt
+# Same checks as .github/workflows/ci.yml, run before each commit:
+#   pip install pre-commit && pre-commit install
+# Each hook runs in an environment of its own, created by pre-commit with the
+# dependencies it needs (Home Assistant included for pyright and pytest), so
+# nothing has to be installed by hand. Keep the versions in line with
+# requirements.txt.
 fail_fast: true
 repos:
-  - repo: local
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.14
     hooks:
       - id: ruff-check
-        name: Ruff (lint)
-        entry: ruff check --fix
-        language: system
-        types: [python]
-
+        args: [--fix]
       - id: ruff-format
-        name: Ruff (format)
-        entry: ruff format
-        language: system
-        types: [python]
 
+  - repo: local
+    hooks:
       - id: validate-catalog
         name: Catalog checks
         entry: python scripts/validate.py
-        language: system
+        language: python
+        additional_dependencies: [jsonschema>=4.23, referencing>=0.35]
         pass_filenames: false
         files: ^(equipment|supplements|schema|scripts)/
 
       - id: pyright
         name: Pyright
         entry: pyright tests/client/custom_components/catalog_demo scripts
-        language: system
+        language: python
+        additional_dependencies:
+          - pyright
+          - pytest-homeassistant-custom-component
+          - jsonschema>=4.23
+          - referencing>=0.35
         pass_filenames: false
         types: [python]
 
       - id: pytest
         name: Tests (100 % coverage)
         entry: pytest --cov=scripts --cov=client --cov-fail-under=100 -q
-        language: system
+        language: python
+        additional_dependencies:
+          - pytest-homeassistant-custom-component
+          - pytest-cov>=6
+          - jsonschema>=4.23
+          - referencing>=0.35
         pass_filenames: false
         files: ^(client|scripts|schema|equipment|supplements|tests)/

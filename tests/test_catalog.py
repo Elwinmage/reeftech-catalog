@@ -317,7 +317,13 @@ def test_release_argument_checks(root, tmp_path):
             previous={"section": "supplements"},
         )
     with pytest.raises(SystemExit):
-        make_release._parse_min(["redsea=1.0"], "equipment")
+        make_release._parse_min(["unknown=1.0"], "equipment")
+    with pytest.raises(SystemExit):
+        make_release._parse_min(["redsea"], "supplements")
+    # Consumers of the other section are skipped (both sections released together)
+    assert make_release._parse_min(
+        ["redsea=1.0", "reef_maintenance=0.3.0"], "equipment"
+    ) == {"reef_maintenance": "0.3.0"}
 
 
 def test_release_main(root, tmp_path, capsys):

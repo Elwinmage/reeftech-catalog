@@ -72,14 +72,21 @@ def _summary(root: Path, section: str, entry: Entry) -> dict:
 
 
 def _parse_min(values: list[str], section: str) -> dict[str, str]:
+    """Minimum integration versions of a section, from name=version values.
+
+    Names of the consumers of another section are skipped, so that one list
+    can be given when both sections are released together.
+    """
+    known = {name for names in CONSUMERS.values() for name in names}
     result = {}
     for value in values:
         name, _, version = value.partition("=")
-        if name not in CONSUMERS[section] or not version:
+        if name not in known or not version:
             raise SystemExit(
-                f"--min-integration expects one of {CONSUMERS[section]} as name=version, got {value!r}"
+                f"--min-integration expects one of {sorted(known)} as name=version, got {value!r}"
             )
-        result[name] = version
+        if name in CONSUMERS[section]:
+            result[name] = version
     return result
 
 

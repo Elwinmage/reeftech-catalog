@@ -92,8 +92,11 @@ here; the card no longer embeds them.
 
 ## Releases
 
-Each section is released on its own (*Actions → Release*), with a version like
-`2026.11.0`:
+*Actions → Release* publishes one section or both (`all`, the default), with
+a version like `2026.11.0`. Each section keeps its own releases; with `all`, a
+section without any change since its previous release is skipped.
+`min_integration` takes one list for both sections (`redsea=2.1.0
+reef_maintenance=0.3.0`), each section keeping its own consumers.
 
 - `<section>-<version>`: the archives of the entries that changed, the manifest
   and the notes. Unchanged entries keep pointing to the release that built them,
