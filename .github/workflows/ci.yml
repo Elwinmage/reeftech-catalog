@@ -19,6 +19,8 @@ jobs:
         run: ruff check . && ruff format --check .
       - name: Check the catalog
         run: python scripts/validate.py
+      - name: README lists up to date
+        run: python scripts/readme_catalog.py --check
       - name: Types
         run: pyright tests/client/custom_components/catalog_demo scripts
       - name: Tests

@@ -27,5 +27,6 @@ drawings. No pictures copied from manufacturers' sites or shops.
 
 ```
 python scripts/validate.py
+python scripts/readme_catalog.py   # adds the new entry to the lists of README.md
 pytest
 ```
