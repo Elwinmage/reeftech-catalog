@@ -169,6 +169,43 @@ def test_render(root: Path) -> None:
     ) in lines
 
 
+def test_parameters_render(tmp_path: Path) -> None:
+    # A normal band, a target-only band, and no band at all.
+    dump(
+        tmp_path / "parameters/items/kh/parameter.json",
+        {
+            "name": {"en": "Alkalinity"},
+            "symbol": "KH",
+            "category": "alkalinity",
+            "unit": "dkh",
+            "range": {"low": 7, "high": 8.5, "optimal": 8},
+        },
+    )
+    dump(
+        tmp_path / "parameters/items/temp/parameter.json",
+        {
+            "name": {"en": "Temperature"},
+            "symbol": "T",
+            "category": "physical",
+            "unit": "celsius",
+            "range": {"optimal": 25.5},
+        },
+    )
+    dump(
+        tmp_path / "parameters/items/fe/parameter.json",
+        {"name": {"en": "Iron"}, "symbol": "Fe", "category": "trace", "unit": "ppb"},
+    )
+    block = rc.render(tmp_path)
+    lines = block.splitlines()
+    assert "### Water parameters (3)" in lines
+    # physical before alkalinity before trace, each with its band rendering
+    after = lines[lines.index("### Water parameters (3)") :]
+    rows = [line for line in after if line.startswith("| ")][1:]  # drop header
+    assert rows[0] == "| T | Temperature | physical | °C | target 25.5 |"
+    assert rows[1] == "| KH | Alkalinity | alkalinity | dKH | 7-8.5 (8) |"
+    assert rows[2] == "| Fe | Iron | trace element | ppb |  |"
+
+
 def test_schedule_without_one() -> None:
     assert rc._schedule(None) == ""
 

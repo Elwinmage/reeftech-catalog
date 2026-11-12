@@ -12,6 +12,7 @@ import argparse
 import json
 import sys
 from dataclasses import dataclass, field
+from itertools import pairwise
 from pathlib import Path
 
 from jsonschema import Draft202012Validator
@@ -50,7 +51,12 @@ DESCRIPTORS = {
     "category": "category.json",
     "item": "item.json",
     "supplement": "supplement.json",
+    "parameter": "parameter.json",
 }
+
+# Order the reference band must keep: min <= low <= optimal <= high <= max,
+# skipping any bound that is absent.
+RANGE_ORDER = ("min", "low", "optimal", "high", "max")
 
 
 @dataclass
@@ -305,6 +311,52 @@ def _check_supplements(root: Path, report: Report, validators) -> None:
                 )
 
 
+def _check_parameters(root: Path, report: Report, validators) -> None:
+    symbols: dict[str, str] = {}
+    effect_params: dict[str, str] = {}
+    for entry in collect(root, "parameters"):
+        eid = entry_id(entry)
+        where = f"parameters/items/{eid}"
+        _check_files(report, where, entry, "parameter.json")
+        if "parameter.json" not in entry.files:
+            continue
+        data = _load(
+            report, where, entry.files["parameter.json"], validators["parameter"]
+        )
+        if data is None:
+            continue
+        _check_i18n(report, where, data["name"])
+
+        symbol = data["symbol"]
+        if symbol in symbols:
+            report.error(
+                where, f"symbol {symbol!r} already used by {symbols[symbol]!r}"
+            )
+        symbols[symbol] = eid
+
+        effect = data.get("effect_parameter")
+        if effect is not None:
+            if effect in effect_params:
+                report.error(
+                    where,
+                    f"effect_parameter {effect!r} already mapped by "
+                    f"{effect_params[effect]!r}",
+                )
+            effect_params[effect] = eid
+
+        band = data.get("range")
+        if band:
+            present = [(key, band[key]) for key in RANGE_ORDER if key in band]
+            for (prev_key, prev), (key, value) in pairwise(present):
+                if prev > value:
+                    report.error(
+                        where,
+                        f"range {prev_key}={prev} must be <= {key}={value}",
+                    )
+            if "source" not in data:
+                report.warn(where, "reference band without a source")
+
+
 def validate(root: Path) -> Report:
     report = Report()
     validators = _validators(root)
@@ -313,6 +365,7 @@ def validate(root: Path) -> Report:
             report.error(section, "section folder missing")
     _check_equipment(root, report, validators)
     _check_supplements(root, report, validators)
+    _check_parameters(root, report, validators)
     return report
 
 

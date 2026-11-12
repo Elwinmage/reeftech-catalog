@@ -1,0 +1,12 @@
+{
+  "name": {
+    "en": "Iron",
+    "fr": "Fer"
+  },
+  "symbol": "Fe",
+  "category": "trace",
+  "unit": "ppb",
+  "decimals": 1,
+  "icon": "mdi:alpha-f-circle-outline",
+  "effect_parameter": "fe"
+}

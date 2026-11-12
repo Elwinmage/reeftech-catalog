@@ -65,6 +65,18 @@ def root(tmp_path: Path) -> Path:
             "source": "user",
         },
     )
+    dump(
+        tmp_path / "parameters/items/kh/parameter.json",
+        {
+            "name": {"en": "Alkalinity"},
+            "symbol": "KH",
+            "category": "alkalinity",
+            "unit": "dkh",
+            "effect_parameter": "kh",
+            "range": {"low": 7, "high": 8.5, "optimal": 8},
+            "source": "program",
+        },
+    )
     return tmp_path
 
 
@@ -244,6 +256,45 @@ def test_unverified_effects_warn(root):
     assert any("not used for automatic dose proposals" in w for w in report.warnings)
 
 
+def parameter(root: Path, name: str, **data) -> None:
+    base = {
+        "name": {"en": name.upper()},
+        "symbol": name.upper(),
+        "category": "trace",
+        "unit": "ppm",
+    }
+    dump(root / f"parameters/items/{name}/parameter.json", base | data)
+
+
+def test_parameter_rules(root):
+    # Duplicate symbol: the fixture already defines 'KH'.
+    parameter(root, "dupsym", symbol="KH")
+    # Duplicate effect_parameter: the fixture already maps 'kh'.
+    parameter(root, "dupeff", symbol="DE", effect_parameter="kh")
+    # Reference band out of order (low above high).
+    parameter(root, "badband", symbol="BB", range={"low": 10, "high": 5}, source="src")
+    # Band without a source only warns.
+    parameter(root, "nosrc", symbol="NS", range={"low": 1, "high": 2})
+    report = validate.validate(root)
+    for expected in (
+        "symbol 'KH' already used by",
+        "effect_parameter 'kh' already mapped by",
+        "range low=10 must be <= high=5",
+    ):
+        assert any(expected in e for e in report.errors), expected
+    assert any("reference band without a source" in w for w in report.warnings)
+
+
+def test_parameter_missing_or_invalid(root):
+    # A folder without its descriptor is reported and skipped.
+    (root / "parameters/items/empty").mkdir(parents=True)
+    # A descriptor that fails the schema is reported and skipped (not crashed).
+    dump(root / "parameters/items/bad/parameter.json", {"symbol": "X"})
+    found = errors(root)
+    assert any("parameters/items/empty: missing parameter.json" in e for e in found)
+    assert any(e.startswith("parameters/items/bad:") for e in found)
+
+
 def test_main_exit_codes(root, capsys):
     assert validate.main(["--root", str(root)]) == 0
     assert (
@@ -301,6 +352,13 @@ def test_release_supplements_summary(root, tmp_path):
     assert manifest["entries"]["supplement.kh"]["uid"] == "rs-1"
     assert manifest["entries"]["supplement.brine"]["supplement_kind"] == "brine"
     assert manifest["section"] == "supplements" and manifest["format"] == 1
+
+
+def test_release_parameters_summary(root, tmp_path):
+    manifest = make_release.build(root, "parameters", "2026.11.0", tmp_path / "out")
+    entry = manifest["entries"]["parameter.kh"]
+    assert entry["category"] == "alkalinity" and entry["unit"] == "dkh"
+    assert manifest["section"] == "parameters" and manifest["format"] == 1
 
 
 def test_release_argument_checks(root, tmp_path):

@@ -21,7 +21,7 @@ repos:
         language: python
         additional_dependencies: [jsonschema>=4.23, referencing>=0.35]
         pass_filenames: false
-        files: ^(equipment|supplements|schema|scripts)/
+        files: ^(equipment|supplements|parameters|schema|scripts)/
 
       - id: readme-catalog
         name: README lists up to date

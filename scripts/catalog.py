@@ -7,6 +7,7 @@ so an entry can never disagree with its location.
     equipment/categories/<category_id>/category.json [+ image.webp, thumb.webp]
     equipment/items/<item_id>/item.json              [+ image.webp, thumb.webp]
     supplements/items/<supplement_id>/supplement.json [+ image.webp, thumb.webp]
+    parameters/items/<parameter_id>/parameter.json    [+ image.webp, thumb.webp]
 """
 
 from __future__ import annotations
@@ -19,7 +20,7 @@ from pathlib import Path
 # Bumped only on breaking changes: consumers skip releases they cannot read.
 SCHEMA_VERSION = 1
 
-SECTIONS = ("equipment", "supplements")
+SECTIONS = ("equipment", "supplements", "parameters")
 
 # Languages of the ecosystem. English is mandatory, the others are reported
 # as missing (warning) so translators know what to fill in.
@@ -81,6 +82,8 @@ def collect(root: Path, section: str) -> list[Entry]:
         layout = (("categories", "category"), ("items", "item"))
     elif section == "supplements":
         layout = (("items", "supplement"),)
+    elif section == "parameters":
+        layout = (("items", "parameter"),)
     else:
         raise ValueError(f"unknown section {section!r}")
 

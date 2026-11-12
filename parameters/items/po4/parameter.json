@@ -1,0 +1,20 @@
+{
+  "name": {
+    "en": "Phosphate",
+    "fr": "Phosphate"
+  },
+  "symbol": "PO4",
+  "category": "nutrient",
+  "unit": "ppm",
+  "decimals": 3,
+  "icon": "mdi:molecule",
+  "effect_parameter": "po4",
+  "range": {
+    "min": 0,
+    "max": 0.5,
+    "low": 0.02,
+    "high": 0.1,
+    "optimal": 0.05
+  },
+  "source": "Red Sea Reef Care reference program"
+}

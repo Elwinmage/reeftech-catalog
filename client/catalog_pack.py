@@ -58,10 +58,12 @@ KIND_LAYOUT: dict[str, tuple[str, str | None]] = {
     "category": ("categories", "category.json"),
     "item": ("items", "item.json"),
     "supplement": ("items", "supplement.json"),
+    "parameter": ("items", "parameter.json"),
 }
 SECTION_KINDS: dict[str, frozenset[str]] = {
     "equipment": frozenset({"tasks", "category", "item"}),
     "supplements": frozenset({"supplement"}),
+    "parameters": frozenset({"parameter"}),
 }
 IMAGE_FILES = ("image.webp", "image.png")
 THUMB_FILE = "thumb.webp"

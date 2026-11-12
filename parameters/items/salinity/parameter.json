@@ -1,0 +1,19 @@
+{
+  "name": {
+    "en": "Salinity",
+    "fr": "Salinité"
+  },
+  "symbol": "Sal",
+  "category": "physical",
+  "unit": "ppt",
+  "decimals": 0,
+  "icon": "mdi:shaker-outline",
+  "range": {
+    "min": 28,
+    "max": 40,
+    "low": 33,
+    "high": 35,
+    "optimal": 35
+  },
+  "source": "Common reef-keeping range"
+}

@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Elwinmage/reeftech-catalog/schema/parameter.schema.json",
+  "title": "Water parameter (parameters/items/<id>/parameter.json)",
+  "description": "A water chemistry or physical parameter the ecosystem can track, from a sensor or from a manual test. The folder name is the id and, for a dosed parameter, matches the supplement effects parameter so the two catalogs line up.",
+  "type": "object",
+  "required": ["name", "symbol", "category", "unit"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "description": "Human label shown on the card (e.g. 'Alkalinity').",
+      "$ref": "common.schema.json#/$defs/i18n"
+    },
+    "symbol": {
+      "description": "Short label as printed on the test kit (e.g. 'KH', 'NO3').",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 8
+    },
+    "category": {
+      "description": "Grouping used to lay the parameters out on the card.",
+      "enum": ["physical", "alkalinity", "major", "minor", "trace", "nutrient"]
+    },
+    "unit": {
+      "description": "Display unit of the parameter.",
+      "enum": [
+        "dkh",
+        "ppm",
+        "ppb",
+        "mg_l",
+        "celsius",
+        "fahrenheit",
+        "mv",
+        "ph",
+        "sg",
+        "ppt"
+      ]
+    },
+    "decimals": {
+      "description": "Digits shown after the decimal point.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4,
+      "default": 1
+    },
+    "icon": { "$ref": "common.schema.json#/$defs/icon" },
+    "device_class": {
+      "description": "Home Assistant sensor device_class a matching sensor is expected to carry, used to auto-map a sensor to this parameter.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32
+    },
+    "sources": {
+      "description": "Where a value for this parameter can come from.",
+      "type": "array",
+      "items": { "enum": ["sensor", "manual"] },
+      "uniqueItems": true,
+      "minItems": 1,
+      "default": ["sensor", "manual"]
+    },
+    "effect_parameter": {
+      "description": "The supplement effects parameter this maps to, when a supplement can raise it. Lets the card tie a dosing head to the parameter it drives.",
+      "enum": ["kh", "ca", "mg", "k", "no3", "po4", "i", "fe", "sr"]
+    },
+    "range": {
+      "description": "Reef-keeping reference band, used for the target gauge and the out-of-range colour. Every bound is optional; give only the ones that are well established.",
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "min": {
+          "description": "Lowest value the scale starts at (not a target).",
+          "type": "number"
+        },
+        "max": {
+          "description": "Highest value the scale ends at (not a target).",
+          "type": "number"
+        },
+        "low": {
+          "description": "Below this the parameter reads low.",
+          "type": "number"
+        },
+        "high": {
+          "description": "Above this the parameter reads high.",
+          "type": "number"
+        },
+        "optimal": {
+          "description": "Commonly recommended target.",
+          "type": "number"
+        }
+      }
+    },
+    "source": {
+      "description": "Where the reference band comes from (program, label, URL).",
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 300
+    }
+  }
+}

@@ -207,6 +207,75 @@ def _effects(data: dict) -> str:
     return ", ".join(parts) + ("" if data.get("verified") else " (unverified)")
 
 
+CATEGORIES = {
+    "physical": "physical",
+    "alkalinity": "alkalinity",
+    "major": "major element",
+    "minor": "minor element",
+    "trace": "trace element",
+    "nutrient": "nutrient",
+}
+
+UNITS = {
+    "dkh": "dKH",
+    "ppm": "ppm",
+    "ppb": "ppb",
+    "mg_l": "mg/L",
+    "celsius": "°C",
+    "fahrenheit": "°F",
+    "mv": "mV",
+    "ph": "pH",
+    "sg": "SG",
+    "ppt": "ppt",
+}
+
+# Order parameters are listed in, grouped by category.
+PARAMETER_ORDER = ("physical", "alkalinity", "major", "minor", "trace", "nutrient")
+
+
+def _band(data: dict) -> str:
+    """The reference band in a few words: "7-8.5 (8)"."""
+    band = data.get("range")
+    if not isinstance(band, dict):
+        return ""
+    low, high, optimal = band.get("low"), band.get("high"), band.get("optimal")
+    if low is None and high is None:
+        return f"target {optimal}" if optimal is not None else ""
+    text = f"{low}-{high}"
+    if optimal is not None:
+        text += f" ({optimal})"
+    return text
+
+
+def parameters_table(root: Path) -> list[str]:
+    folders = _folders(root / "parameters" / "items")
+    entries = [(folder, read_json(folder / "parameter.json")) for folder in folders]
+    entries.sort(
+        key=lambda e: (
+            PARAMETER_ORDER.index(e[1]["category"])
+            if e[1].get("category") in PARAMETER_ORDER
+            else len(PARAMETER_ORDER),
+            _name(e[1], e[0].name).lower(),
+        )
+    )
+    lines = [
+        f"### Water parameters ({len(entries)})",
+        "",
+        "| Symbol | Parameter | Category | Unit | Reef range |",
+        "|---|---|---|---|---|",
+    ]
+    for folder, data in entries:
+        category = str(data.get("category", ""))
+        unit = str(data.get("unit", ""))
+        lines.append(
+            f"| {_cell(data.get('symbol', ''))} "
+            f"| {_cell(_name(data, folder.name))} "
+            f"| {CATEGORIES.get(category, category)} "
+            f"| {UNITS.get(unit, unit)} | {_cell(_band(data))} |"
+        )
+    return lines
+
+
 def supplements_table(root: Path) -> list[str]:
     folders = _folders(root / "supplements" / "items")
     entries = [(folder, read_json(folder / "supplement.json")) for folder in folders]
@@ -238,6 +307,7 @@ def render(root: Path) -> str:
         items_table(root, tasks),
         tasks_table(root, tasks),
         supplements_table(root),
+        parameters_table(root),
     ]
     lines = [
         BEGIN,

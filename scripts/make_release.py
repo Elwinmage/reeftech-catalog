@@ -32,6 +32,7 @@ VERSION_RE = re.compile(r"^\d{4}\.\d{1,2}\.\d+$")
 CONSUMERS = {
     "equipment": ("reef_maintenance", "maintenance_hub"),
     "supplements": ("redsea",),
+    "parameters": ("reeftank", "redsea"),
 }
 _ZIP_DATE = (1980, 1, 1, 0, 0, 0)
 
@@ -68,6 +69,10 @@ def _summary(root: Path, section: str, entry: Entry) -> dict:
         summary["fullname"] = data["fullname"]
         if "uid" in data:
             summary["uid"] = data["uid"]
+    elif entry.kind == "parameter":
+        data = read_json(entry.files["parameter.json"])
+        summary["category"] = data["category"]
+        summary["unit"] = data["unit"]
     return summary
 
 

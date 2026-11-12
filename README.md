@@ -294,6 +294,24 @@ run it after adding or changing an entry.
 |  | Tropic Marin | Plus-NP | nutrients |  |
 | <img src="supplements/items/tropic-marin-potassium/thumb.webp" width="48" alt=""> | Tropic Marin | Potassium | trace elements | +1.009 ppm K |
 
+### Water parameters (13)
+
+| Symbol | Parameter | Category | Unit | Reef range |
+|---|---|---|---|---|
+| ORP | ORP | physical | mV | 300-450 (380) |
+| pH | pH | physical | pH | 7.8-8.4 (8.2) |
+| Sal | Salinity | physical | ppt | 33-35 (35) |
+| T | Temperature | physical | °C | 24-27 (25.5) |
+| KH | Alkalinity | alkalinity | dKH | 7-8.5 (8) |
+| Ca | Calcium | major element | ppm | 410-450 (430) |
+| Mg | Magnesium | major element | ppm | 1250-1400 (1340) |
+| K | Potassium | minor element | ppm | 380-420 (400) |
+| Sr | Strontium | minor element | ppm | 8-10 (9) |
+| I | Iodine | trace element | ppb | 40-80 (60) |
+| Fe | Iron | trace element | ppb |  |
+| NO3 | Nitrate | nutrient | ppm | 1-10 (5) |
+| PO4 | Phosphate | nutrient | ppm | 0.02-0.1 (0.05) |
+
 <!-- catalog:end -->
 
 ## License
