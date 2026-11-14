@@ -18,7 +18,7 @@ on:
         required: true
         type: choice
         default: all
-        options: [all, equipment, supplements]
+        options: [all, equipment, supplements, parameters]
       version:
         description: "Release version (ex: 2026.11.0)"
         required: true
@@ -55,7 +55,7 @@ jobs:
           SECTION: ${{ inputs.section }}
         run: |
           if [ "$SECTION" = all ]; then
-            echo 'sections=["equipment","supplements"]' >> "$GITHUB_OUTPUT"
+            echo 'sections=["equipment","supplements","parameters"]' >> "$GITHUB_OUTPUT"
           else
             echo "sections=[\"$SECTION\"]" >> "$GITHUB_OUTPUT"
           fi
