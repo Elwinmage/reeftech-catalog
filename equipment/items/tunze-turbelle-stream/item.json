@@ -1,0 +1,56 @@
+{
+  "category": "circulation_pump",
+  "brand": "Tunze",
+  "model": "Turbelle stream / stream 3",
+  "inherit_maintenance": false,
+  "maintenance": [
+    {
+      "task": "pump_clean",
+      "schedule": {
+        "type": "interval",
+        "unit": "weeks",
+        "every": {
+          "default": 6,
+          "min": 4,
+          "max": 13
+        }
+      }
+    },
+    {
+      "task": "magnet_holder_clean",
+      "schedule": {
+        "type": "interval",
+        "unit": "weeks",
+        "every": {
+          "default": 6,
+          "min": 4,
+          "max": 13
+        }
+      }
+    },
+    {
+      "task": "pump_descale",
+      "schedule": {
+        "type": "interval",
+        "unit": "months",
+        "every": {
+          "default": 6,
+          "min": 3,
+          "max": 12
+        }
+      }
+    },
+    {
+      "task": "wear_parts_replace",
+      "schedule": {
+        "type": "interval",
+        "unit": "months",
+        "every": {
+          "default": 24,
+          "min": 12,
+          "max": 36
+        }
+      }
+    }
+  ]
+}

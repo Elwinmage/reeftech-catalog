@@ -1,0 +1,56 @@
+{
+  "category": "circulation_pump",
+  "brand": "Jebao",
+  "model": "SLW / MLW / SCP / SOW",
+  "inherit_maintenance": false,
+  "maintenance": [
+    {
+      "task": "pump_clean",
+      "schedule": {
+        "type": "interval",
+        "unit": "weeks",
+        "every": {
+          "default": 6,
+          "min": 4,
+          "max": 9
+        }
+      }
+    },
+    {
+      "task": "magnet_holder_clean",
+      "schedule": {
+        "type": "interval",
+        "unit": "weeks",
+        "every": {
+          "default": 9,
+          "min": 4,
+          "max": 17
+        }
+      }
+    },
+    {
+      "task": "pump_descale",
+      "schedule": {
+        "type": "interval",
+        "unit": "months",
+        "every": {
+          "default": 6,
+          "min": 3,
+          "max": 12
+        }
+      }
+    },
+    {
+      "task": "wear_parts_replace",
+      "schedule": {
+        "type": "interval",
+        "unit": "months",
+        "every": {
+          "default": 18,
+          "min": 12,
+          "max": 36
+        }
+      }
+    }
+  ]
+}

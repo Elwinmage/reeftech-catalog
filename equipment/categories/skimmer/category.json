@@ -9,10 +9,64 @@
   "icon": "mdi:flask-empty-outline",
   "maintenance": [
     {
-      "task": "skimmer_clean"
+      "task": "skimmer_cup_clean",
+      "schedule": {
+        "type": "interval",
+        "unit": "weeks",
+        "every": {
+          "default": 2,
+          "min": 1,
+          "max": 4
+        }
+      }
     },
     {
-      "task": "pump_clean"
+      "task": "venturi_clean",
+      "schedule": {
+        "type": "interval",
+        "unit": "weeks",
+        "every": {
+          "default": 4,
+          "min": 2,
+          "max": 8
+        }
+      }
+    },
+    {
+      "task": "needle_wheel_clean",
+      "schedule": {
+        "type": "interval",
+        "unit": "months",
+        "every": {
+          "default": 2,
+          "min": 1,
+          "max": 4
+        }
+      }
+    },
+    {
+      "task": "skimmer_body_descale",
+      "schedule": {
+        "type": "interval",
+        "unit": "months",
+        "every": {
+          "default": 6,
+          "min": 3,
+          "max": 12
+        }
+      }
+    },
+    {
+      "task": "wear_parts_replace",
+      "schedule": {
+        "type": "interval",
+        "unit": "months",
+        "every": {
+          "default": 18,
+          "min": 12,
+          "max": 36
+        }
+      }
     }
   ]
 }

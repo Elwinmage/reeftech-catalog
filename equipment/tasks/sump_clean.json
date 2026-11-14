@@ -1,0 +1,21 @@
+{
+  "name": {
+    "en": "Clean the sump",
+    "fr": "Nettoyer le bac décanteur",
+    "de": "Technikbecken reinigen",
+    "es": "Limpiar el sump",
+    "it": "Pulire la sump",
+    "pl": "Wyczyść sump",
+    "pt": "Limpar a sump"
+  },
+  "icon": "mdi:waves-arrow-right",
+  "schedule": {
+    "type": "interval",
+    "unit": "months",
+    "every": {
+      "default": 3,
+      "min": 1,
+      "max": 6
+    }
+  }
+}

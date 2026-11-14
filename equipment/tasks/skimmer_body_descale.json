@@ -1,0 +1,21 @@
+{
+  "name": {
+    "en": "Descale skimmer body",
+    "fr": "Détartrer le corps de l'écumeur",
+    "de": "Abschäumerkörper entkalken",
+    "es": "Descalcificar el cuerpo del skimmer",
+    "it": "Decalcificare il corpo dello schiumatoio",
+    "pl": "Odkamień korpus odpieniacza",
+    "pt": "Descalcificar o corpo do escumador"
+  },
+  "icon": "mdi:spray-bottle",
+  "schedule": {
+    "type": "interval",
+    "unit": "months",
+    "every": {
+      "default": 6,
+      "min": 3,
+      "max": 12
+    }
+  }
+}

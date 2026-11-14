@@ -1,0 +1,21 @@
+{
+  "name": {
+    "en": "Replace filter sock",
+    "fr": "Changer la chaussette",
+    "de": "Filtersocke wechseln",
+    "es": "Cambiar el calcetín de filtro",
+    "it": "Cambiare il calzino filtrante",
+    "pl": "Wymień skarpetę filtracyjną",
+    "pt": "Mudar a meia filtrante"
+  },
+  "icon": "mdi:sack",
+  "schedule": {
+    "type": "interval",
+    "unit": "days",
+    "every": {
+      "default": 7,
+      "min": 3,
+      "max": 21
+    }
+  }
+}

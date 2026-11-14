@@ -1,0 +1,21 @@
+{
+  "name": {
+    "en": "Clean the glass",
+    "fr": "Nettoyer les vitres",
+    "de": "Scheiben reinigen",
+    "es": "Limpiar los cristales",
+    "it": "Pulire i vetri",
+    "pl": "Wyczyść szyby",
+    "pt": "Limpar os vidros"
+  },
+  "icon": "mdi:square-opacity",
+  "schedule": {
+    "type": "interval",
+    "unit": "days",
+    "every": {
+      "default": 7,
+      "min": 3,
+      "max": 21
+    }
+  }
+}

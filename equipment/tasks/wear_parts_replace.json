@@ -1,0 +1,21 @@
+{
+  "name": {
+    "en": "Replace wear parts kit",
+    "fr": "Remplacer le kit de pièces d'usure",
+    "de": "Verschleißteile-Set ersetzen",
+    "es": "Sustituir el kit de piezas de desgaste",
+    "it": "Sostituire il kit di parti soggette a usura",
+    "pl": "Wymień zestaw części zużywalnych",
+    "pt": "Substituir o kit de peças de desgaste"
+  },
+  "icon": "mdi:cog-refresh",
+  "schedule": {
+    "type": "interval",
+    "unit": "months",
+    "every": {
+      "default": 24,
+      "min": 12,
+      "max": 36
+    }
+  }
+}

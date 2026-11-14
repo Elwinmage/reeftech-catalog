@@ -1,0 +1,21 @@
+{
+  "name": {
+    "en": "Replace RO/DI filters",
+    "fr": "Remplacer les filtres RO/DI",
+    "de": "RO/DI-Filter ersetzen",
+    "es": "Sustituir los filtros RO/DI",
+    "it": "Sostituire i filtri RO/DI",
+    "pl": "Wymień filtry RO/DI",
+    "pt": "Substituir os filtros RO/DI"
+  },
+  "icon": "mdi:water-opacity",
+  "schedule": {
+    "type": "interval",
+    "unit": "months",
+    "every": {
+      "default": 6,
+      "min": 3,
+      "max": 12
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": {
+    "en": "Replace resins",
+    "fr": "Remplacer les résines",
+    "de": "Harze ersetzen",
+    "es": "Sustituir las resinas",
+    "it": "Sostituire le resine",
+    "pl": "Wymień żywice",
+    "pt": "Substituir as resinas"
+  },
+  "icon": "mdi:dots-hexagon",
+  "schedule": {
+    "type": "interval",
+    "unit": "months",
+    "every": {
+      "default": 2,
+      "min": 1,
+      "max": 4
+    }
+  }
+}

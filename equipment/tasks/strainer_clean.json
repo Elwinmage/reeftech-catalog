@@ -1,0 +1,21 @@
+{
+  "name": {
+    "en": "Clean suction strainer",
+    "fr": "Nettoyer la crépine d'aspiration",
+    "de": "Ansaugkorb reinigen",
+    "es": "Limpiar la cesta de aspiración",
+    "it": "Pulire il cestello di aspirazione",
+    "pl": "Wyczyść kosz ssawny",
+    "pt": "Limpar o cesto de aspiração"
+  },
+  "icon": "mdi:filter-variant",
+  "schedule": {
+    "type": "interval",
+    "unit": "weeks",
+    "every": {
+      "default": 6,
+      "min": 3,
+      "max": 9
+    }
+  }
+}

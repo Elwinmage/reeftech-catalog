@@ -1,0 +1,21 @@
+{
+  "name": {
+    "en": "Replace activated carbon",
+    "fr": "Remplacer le charbon actif",
+    "de": "Aktivkohle ersetzen",
+    "es": "Sustituir el carbón activo",
+    "it": "Sostituire il carbone attivo",
+    "pl": "Wymień węgiel aktywny",
+    "pt": "Substituir o carvão ativado"
+  },
+  "icon": "mdi:grain",
+  "schedule": {
+    "type": "interval",
+    "unit": "weeks",
+    "every": {
+      "default": 4,
+      "min": 2,
+      "max": 9
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": {
+    "en": "Vacuum sand bed",
+    "fr": "Siphonner le sable",
+    "de": "Sandbett absaugen",
+    "es": "Sifonar el lecho de arena",
+    "it": "Sifonare il letto di sabbia",
+    "pl": "Odkurz podłoże piaskowe",
+    "pt": "Aspirar o leito de areia"
+  },
+  "icon": "mdi:vacuum",
+  "schedule": {
+    "type": "interval",
+    "unit": "weeks",
+    "every": {
+      "default": 4,
+      "min": 2,
+      "max": 8
+    }
+  }
+}

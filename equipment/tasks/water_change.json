@@ -1,0 +1,21 @@
+{
+  "name": {
+    "en": "Water change",
+    "fr": "Changement d'eau",
+    "de": "Wasserwechsel",
+    "es": "Cambio de agua",
+    "it": "Cambio d'acqua",
+    "pl": "Podmiana wody",
+    "pt": "Mudança de água"
+  },
+  "icon": "mdi:water-sync",
+  "schedule": {
+    "type": "interval",
+    "unit": "weeks",
+    "every": {
+      "default": 2,
+      "min": 1,
+      "max": 52
+    }
+  }
+}

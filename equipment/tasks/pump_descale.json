@@ -1,0 +1,21 @@
+{
+  "name": {
+    "en": "Descale pump",
+    "fr": "Détartrer la pompe",
+    "de": "Pumpe entkalken",
+    "es": "Descalcificar la bomba",
+    "it": "Decalcificare la pompa",
+    "pl": "Odkamień pompę",
+    "pt": "Descalcificar a bomba"
+  },
+  "icon": "mdi:spray-bottle",
+  "schedule": {
+    "type": "interval",
+    "unit": "months",
+    "every": {
+      "default": 6,
+      "min": 3,
+      "max": 12
+    }
+  }
+}

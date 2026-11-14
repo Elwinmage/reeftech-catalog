@@ -1,0 +1,21 @@
+{
+  "name": {
+    "en": "Calibrate probe",
+    "fr": "Étalonner la sonde",
+    "de": "Sonde kalibrieren",
+    "es": "Calibrar la sonda",
+    "it": "Calibrare la sonda",
+    "pl": "Skalibruj sondę",
+    "pt": "Calibrar a sonda"
+  },
+  "icon": "mdi:tune-variant",
+  "schedule": {
+    "type": "interval",
+    "unit": "months",
+    "every": {
+      "default": 3,
+      "min": 1,
+      "max": 6
+    }
+  }
+}

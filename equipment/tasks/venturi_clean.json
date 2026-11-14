@@ -1,0 +1,21 @@
+{
+  "name": {
+    "en": "Clean venturi and air line",
+    "fr": "Nettoyer le venturi et le tuyau d'air",
+    "de": "Venturi und Luftschlauch reinigen",
+    "es": "Limpiar el venturi y el tubo de aire",
+    "it": "Pulire il venturi e il tubo dell'aria",
+    "pl": "Wyczyść venturi i wężyk powietrza",
+    "pt": "Limpar o venturi e o tubo de ar"
+  },
+  "icon": "mdi:weather-windy",
+  "schedule": {
+    "type": "interval",
+    "unit": "weeks",
+    "every": {
+      "default": 4,
+      "min": 2,
+      "max": 8
+    }
+  }
+}

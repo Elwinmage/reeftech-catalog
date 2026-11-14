@@ -1,0 +1,21 @@
+{
+  "name": {
+    "en": "Clean collection cup",
+    "fr": "Nettoyer le gobelet",
+    "de": "Schaumtopf reinigen",
+    "es": "Limpiar el vaso colector",
+    "it": "Pulire il bicchiere di raccolta",
+    "pl": "Wyczyść kubek odpieniacza",
+    "pt": "Limpar o copo coletor"
+  },
+  "icon": "mdi:cup-water",
+  "schedule": {
+    "type": "interval",
+    "unit": "weeks",
+    "every": {
+      "default": 2,
+      "min": 1,
+      "max": 4
+    }
+  }
+}

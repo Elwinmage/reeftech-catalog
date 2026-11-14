@@ -1,0 +1,84 @@
+{
+  "name": {
+    "en": "Aquarium (routine)",
+    "fr": "Aquarium (routine)"
+  },
+  "scopes": [
+    "aquarium"
+  ],
+  "icon": "mdi:fishbowl",
+  "maintenance": [
+    {
+      "task": "water_change",
+      "schedule": {
+        "type": "interval",
+        "unit": "weeks",
+        "every": {
+          "default": 2,
+          "min": 1,
+          "max": 52
+        }
+      }
+    },
+    {
+      "task": "glass_clean",
+      "schedule": {
+        "type": "interval",
+        "unit": "days",
+        "every": {
+          "default": 7,
+          "min": 3,
+          "max": 21
+        }
+      }
+    },
+    {
+      "task": "icp_test",
+      "schedule": {
+        "type": "interval",
+        "unit": "months",
+        "every": {
+          "default": 3,
+          "min": 1,
+          "max": 6
+        }
+      }
+    },
+    {
+      "task": "rodi_filter_replace",
+      "schedule": {
+        "type": "interval",
+        "unit": "months",
+        "every": {
+          "default": 6,
+          "min": 3,
+          "max": 12
+        }
+      }
+    },
+    {
+      "task": "sump_clean",
+      "schedule": {
+        "type": "interval",
+        "unit": "months",
+        "every": {
+          "default": 3,
+          "min": 1,
+          "max": 6
+        }
+      }
+    },
+    {
+      "task": "sand_vacuum",
+      "schedule": {
+        "type": "interval",
+        "unit": "weeks",
+        "every": {
+          "default": 4,
+          "min": 2,
+          "max": 8
+        }
+      }
+    }
+  ]
+}

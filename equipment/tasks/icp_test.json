@@ -1,0 +1,21 @@
+{
+  "name": {
+    "en": "ICP / water lab test",
+    "fr": "Analyse ICP / test eau labo",
+    "de": "ICP / Wasseranalyse im Labor",
+    "es": "Análisis ICP / test de agua en laboratorio",
+    "it": "Analisi ICP / test acqua in laboratorio",
+    "pl": "Analiza ICP / badanie wody w laboratorium",
+    "pt": "Análise ICP / teste de água em laboratório"
+  },
+  "icon": "mdi:flask-outline",
+  "schedule": {
+    "type": "interval",
+    "unit": "months",
+    "every": {
+      "default": 3,
+      "min": 1,
+      "max": 6
+    }
+  }
+}

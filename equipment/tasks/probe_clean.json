@@ -1,0 +1,21 @@
+{
+  "name": {
+    "en": "Clean probe",
+    "fr": "Nettoyer la sonde",
+    "de": "Sonde reinigen",
+    "es": "Limpiar la sonda",
+    "it": "Pulire la sonda",
+    "pl": "Wyczyść sondę",
+    "pt": "Limpar a sonda"
+  },
+  "icon": "mdi:test-tube",
+  "schedule": {
+    "type": "interval",
+    "unit": "months",
+    "every": {
+      "default": 2,
+      "min": 1,
+      "max": 4
+    }
+  }
+}
