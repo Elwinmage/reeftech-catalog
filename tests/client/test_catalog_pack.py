@@ -86,6 +86,12 @@ def _broken(release: Release, change) -> dict:
         ),
         (lambda d: d["entries"]["tasks"].update(since=None), "bad entry tasks version"),
         (lambda d: d["entries"]["item.eheim"].update(scopes="aquarium"), "bad scopes"),
+        (lambda d: d.update(schema=3), "schema is not an object"),
+        (lambda d: d["schema"].update(sha256="xx"), "entry schema: bad sha256"),
+        (
+            lambda d: d["schema"].update(archive="supplements-1/schema.zip"),
+            "entry schema: bad archive",
+        ),
     ],
 )
 def test_parse_manifest_errors(release, change, message):
@@ -98,6 +104,39 @@ def test_parse_manifest_wrong_input():
         cp.parse_manifest({}, "fish")
     with pytest.raises(cp.PackError, match="not an object"):
         cp.parse_manifest([], "equipment")
+
+
+def test_schema_record(release, tmp_path):
+    manifest = parsed(release)
+    schema = manifest.schema
+    assert schema is not None
+    assert schema.name == schema.kind == "schema"
+    assert schema.archive == "equipment-2026.11.0/schema.zip"
+    # It is not an entry of the section: consumers never download it
+    assert "schema" not in manifest.entries
+    assert cp.select(manifest, ["home"]).schema is schema
+
+    blob = release.files[release.archive_url("schema")]
+    cp.verify(blob, schema)
+    cp.extract_entry(blob, schema, tmp_path / "schema")
+    assert sorted(p.name for p in (tmp_path / "schema").iterdir()) == [
+        "category.schema.json",
+        "common.schema.json",
+        "item.schema.json",
+        "task.schema.json",
+    ]
+
+    # A release made before the schemas existed has no record
+    data = _broken(release, lambda d: d.pop("schema"))
+    assert cp.parse_manifest(data, "equipment").schema is None
+
+
+def test_shared_user_parts():
+    assert cp.shared_user_parts("equipment") == (
+        "reeftech_catalog",
+        "user",
+        "equipment",
+    )
 
 
 def test_select(release):
@@ -244,6 +283,11 @@ async def test_client(release):
     assert manifest.version == "2026.11.0"
     blob = await client.entry(manifest.entries["item.eheim"])
     assert blob == release.files[release.archive_url("item.eheim")]
+    assert manifest.schema is not None
+    assert (
+        await client.entry(manifest.schema)
+        == release.files[release.archive_url("schema")]
+    )
 
 
 async def test_client_errors(release, monkeypatch):

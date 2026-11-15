@@ -241,7 +241,3 @@ def test_main_broken_markers(root: Path, capsys) -> None:
     (root / "README.md").write_text(rc.END + rc.BEGIN, encoding="utf-8")
     assert rc.main(["--root", str(root)]) == 1
     assert "broken" in capsys.readouterr().err
-
-
-def test_repository_readme_is_up_to_date() -> None:
-    assert rc.main(["--root", str(REPO), "--check"]) == 0

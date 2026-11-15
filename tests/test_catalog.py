@@ -171,6 +171,11 @@ def test_unexpected_and_oversized_files(root):
 def test_invalid_json(root):
     (root / "equipment/tasks/broken.json").write_text("{", encoding="utf-8")
     assert any("unreadable JSON" in e for e in errors(root))
+    # Same for a descriptor: reported, and the other checks of the entry skipped
+    (root / "supplements/items/brine/supplement.json").write_text("{", encoding="utf-8")
+    assert any(
+        e.startswith("supplements/items/brine: unreadable JSON") for e in errors(root)
+    )
 
 
 def supplement(root: Path, name: str, **data) -> None:
@@ -346,6 +351,54 @@ def test_release_is_incremental(root, tmp_path):
     assert third["entries"] == second["entries"]
 
 
+def test_release_schema_bundle(root, tmp_path):
+    first = make_release.build(root, "equipment", "2026.11.0", tmp_path / "d1")
+    record = first["schema"]
+    assert record["archive"] == "equipment-2026.11.0/schema.zip"
+    assert record["since"] == "2026.11.0"
+    assert "- validation schemas" in (tmp_path / "d1/notes.md").read_text()
+    # Data only, and just what the section needs
+    with zipfile.ZipFile(tmp_path / "d1/upload/schema.zip") as archive:
+        assert archive.namelist() == [
+            "category.schema.json",
+            "common.schema.json",
+            "item.schema.json",
+            "task.schema.json",
+        ]
+    only = make_release.build(root, "parameters", "2026.11.0", tmp_path / "p")
+    with zipfile.ZipFile(tmp_path / "p/upload/schema.zip") as archive:
+        assert archive.namelist() == ["common.schema.json", "parameter.schema.json"]
+    assert only["schema"]["archive"] == "parameters-2026.11.0/schema.zip"
+
+    # Unchanged schemas keep pointing to the archive of their release
+    second = make_release.build(
+        root, "equipment", "2026.11.1", tmp_path / "d2", previous=first
+    )
+    assert second["schema"] == record
+    assert not (tmp_path / "d2/upload/schema.zip").exists()
+
+    # A release made before the schemas were published gets them as "Added"
+    legacy = {k: v for k, v in first.items() if k != "schema"}
+    make_release.build(root, "equipment", "2026.11.2", tmp_path / "d3", previous=legacy)
+    assert "## Added\n\n- validation schemas" in (tmp_path / "d3/notes.md").read_text()
+
+    # A changed schema is "Updated" and uploaded again
+    path = root / "schema/task.schema.json"
+    path.write_text(path.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+    third = make_release.build(
+        root, "equipment", "2026.11.3", tmp_path / "d4", previous=second
+    )
+    assert third["schema"]["since"] == "2026.11.3"
+    assert third["schema"]["sha256"] != record["sha256"]
+    notes = (tmp_path / "d4/notes.md").read_text()
+    assert "## Updated\n\n- validation schemas" in notes
+    assert "No content change." not in notes
+
+    (root / "schema/common.schema.json").unlink()
+    with pytest.raises(SystemExit, match="missing schema file"):
+        make_release.build(root, "equipment", "2026.11.4", tmp_path / "d5")
+
+
 def test_release_supplements_summary(root, tmp_path):
     supplement(root, "kh", uid="rs-1")
     manifest = make_release.build(root, "supplements", "2026.11.0", tmp_path / "out")
@@ -509,7 +562,18 @@ def test_sync_client(root, tmp_path, capsys):
     ).exists()
 
     stale = sync_client.sync(base, root=root)
-    assert len(stale) == 6  # 2 integrations x (2 modules + snapshot)
+    # 2 integrations x (2 modules + snapshot), the editor: 3 modules, no snapshot
+    assert len(stale) == 9
+    editor = base / "reeftech_catalog_editor/custom_components/reeftech_catalog_editor"
+    assert (
+        (editor / "catalog_rules.py")
+        .read_text()
+        .startswith("# Generated from reeftech-catalog/client/catalog_rules.py")
+    )
+    assert not (editor / "catalog_builtin").exists()
+    assert not (
+        base / "ha-reefbeat-component/custom_components/redsea/catalog_rules.py"
+    ).exists()
     redsea = base / "ha-reefbeat-component/custom_components/redsea"
     assert (
         (redsea / "catalog_pack.py")

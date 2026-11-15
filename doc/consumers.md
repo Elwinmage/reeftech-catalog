@@ -44,9 +44,11 @@ CATALOG = CatalogSpec(DOMAIN, "supplements", "ReefBeat supplements catalog")
 # reef_maintenance: CatalogSpec(DOMAIN, "equipment", "Reef equipment catalog", scopes=("aquarium",))
 # maintenance_hub:  CatalogSpec(DOMAIN, "equipment", "Equipment catalog")
 
+
 async def async_setup_entry(hass, entry):
     await async_setup_catalog(hass, entry, CATALOG)
     ...
+
 
 async def async_unload_entry(hass, entry):
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
@@ -57,6 +59,7 @@ async def async_unload_entry(hass, entry):
 ```python
 # update.py (and the same in switch.py with "switch")
 from .catalog_runtime import catalog_entities
+
 
 async def async_setup_entry(hass, entry, async_add_entities):
     async_add_entities([*catalog_entities(hass, entry, DOMAIN, "update"), ...])
@@ -108,11 +111,47 @@ it). Messages to add to `strings.json` and the translations:
 |---|---|---|
 | built-in | `custom_components/<domain>/catalog_builtin/` | `/<domain>_catalog/builtin/` |
 | downloaded | `<config>/<domain>/catalog/` | `/<domain>_catalog/pack/` |
+| shared user | `<config>/reeftech_catalog/user/<section>/` | `/<domain>_catalog/shared/` |
 | user | `<config>/<domain>/catalog_user/` | `/<domain>_catalog/user/` |
 
-All three share the section layout of this repository. On identical ids the
-user layer wins over the downloaded one, which wins over the built-in one.
-Visuals are public catalog data, served without authentication.
+All of them share the section layout of this repository (the shared user
+folder has one subfolder per section, as `items/` exists in each). On identical
+ids the later layer wins: built-in < downloaded < shared user < user. Entries of
+both user layers are reported with `source: "user"`. Visuals are public catalog
+data, served without authentication.
+
+### Shared user layer
+
+The shared folder is common to every integration reading the section, so a
+tool editing the catalog writes **once** and all of them see the entry. The
+folder is created by the integrations. A writer:
+
+1. writes the entry in `<config>/reeftech_catalog/user/<section>/` with the
+   section layout (`items/<id>/item.json`, `image.webp`, `thumb.webp`...),
+   after checking it against the schemas of the release (see below);
+2. sends the dispatcher signal `catalog_runtime.SIGNAL_USER_CATALOG_CHANGED`
+   (`reeftech_catalog_user_changed`) with the section changed, or `None` for all
+   of them. Each updater of that section reloads its view in the background,
+   notifies its listeners (cards subscribed to `<domain>/catalog/subscribe`
+   reload) and stamps the visuals of the shared layer with a new revision, so
+   that a replaced image is fetched again.
+
+Nothing is read from the shared folder between two signals (and at start-up).
+When an entry reaches the catalog in a release, the writer removes its own copy.
+
+### Schemas of a release
+
+The manifest of each release has a `schema` record (`archive`, `sha256`,
+`size`, `since`, like an entry) pointing to `schema.zip`: `common.schema.json`
+and the schemas of the kinds of the section. It is data only, and it is not an
+entry: integrations reading the entries never download it. A tool editing the
+catalog reads it with `PackClient.entry(manifest.schema)` and `extract_entry`, to
+check a draft against the schemas of the release the integrations have
+installed. Rules that JSON Schema cannot express (cross references, bounds
+between fields, uniqueness) are in `client/catalog_rules.py`, used both by
+`scripts/validate.py` (CI) and by the editing tools, which get a copy through
+`sync_client.py`: a release never carries code. `validate_draft` runs, for one
+entry, everything the CI would check.
 
 ## Exposure to the cards
 

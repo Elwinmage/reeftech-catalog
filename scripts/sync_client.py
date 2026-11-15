@@ -7,8 +7,12 @@ regen.sh), or give it with --base:
 
 For each integration found it writes, in custom_components/<domain>/:
   catalog_pack.py, catalog_runtime.py  copies of client/ with a header
+  catalog_rules.py                     (editors of the catalog only) the rules
+                                       an entry must follow, shared with validate.py
   catalog_builtin/                     the entries of its section and scopes,
                                        used before the first download and offline
+                                       (not for editors, which read the views of
+                                       the integrations)
 
 --check changes nothing and fails when a copy or a snapshot is out of date.
 """
@@ -28,11 +32,18 @@ REPO = Path(__file__).resolve().parent.parent
 CLIENT_FILES = ("catalog_pack.py", "catalog_runtime.py")
 HEADER = "# Generated from reeftech-catalog/client/{name} by scripts/sync_client.py: do not edit this copy.\n"
 
-#: checkout folder -> (domain, section, scopes kept or None for all)
-TARGETS: dict[str, tuple[str, str, tuple[str, ...] | None]] = {
+#: Modules only some domains need, besides CLIENT_FILES
+EXTRA_FILES: dict[str, tuple[str, ...]] = {
+    "reeftech_catalog_editor": ("catalog_rules.py",),
+}
+
+#: checkout folder -> (domain, section, scopes kept or None for all); a domain
+#: without section has no built-in snapshot
+TARGETS: dict[str, tuple[str, str | None, tuple[str, ...] | None]] = {
     "ha-reefbeat-component": ("redsea", "supplements", None),
     "ha-reef-maintenance-component": ("reef_maintenance", "equipment", ("aquarium",)),
     "ha-maintenance-hub": ("maintenance_hub", "equipment", None),
+    "reeftech_catalog_editor": ("reeftech_catalog_editor", None, None),
 }
 
 
@@ -83,9 +94,14 @@ def write_snapshot(
             shutil.copyfile(path, folder / name)
 
 
-def write_client(dest: Path) -> None:
+def client_files(domain: str) -> tuple[str, ...]:
+    """Modules copied into the integration of a domain."""
+    return (*CLIENT_FILES, *EXTRA_FILES.get(domain, ()))
+
+
+def write_client(dest: Path, domain: str) -> None:
     """Copy the client modules into an integration folder."""
-    for name in CLIENT_FILES:
+    for name in client_files(domain):
         text = (REPO / "client" / name).read_text(encoding="utf-8")
         (dest / name).write_text(HEADER.format(name=name) + text, encoding="utf-8")
 
@@ -114,9 +130,10 @@ def sync(base: Path, check: bool = False, root: Path = REPO) -> list[str]:
             continue
         with tempfile.TemporaryDirectory() as tmp:
             fresh = Path(tmp)
-            write_client(fresh)
-            write_snapshot(root, section, scopes, fresh / "catalog_builtin")
-            for name in CLIENT_FILES:
+            write_client(fresh, domain)
+            if section is not None:
+                write_snapshot(root, section, scopes, fresh / "catalog_builtin")
+            for name in client_files(domain):
                 target = component / name
                 if not target.is_file() or not filecmp.cmp(
                     fresh / name, target, shallow=False
@@ -124,7 +141,9 @@ def sync(base: Path, check: bool = False, root: Path = REPO) -> list[str]:
                     stale.append(f"{folder}/{name}")
                     if not check:
                         shutil.copyfile(fresh / name, target)
-            if not _same_tree(fresh / "catalog_builtin", component / "catalog_builtin"):
+            if section is not None and not _same_tree(
+                fresh / "catalog_builtin", component / "catalog_builtin"
+            ):
                 stale.append(f"{folder}/catalog_builtin")
                 if not check:
                     shutil.rmtree(component / "catalog_builtin", ignore_errors=True)

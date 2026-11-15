@@ -36,7 +36,12 @@ class Release:
     manifest_url: str
 
     def archive_url(self, name: str) -> str:
-        return f"https://github.com/Elwinmage/reeftech-catalog/releases/download/{self.manifest['entries'][name]['archive']}"
+        record = (
+            self.manifest["schema"]
+            if name == "schema"
+            else self.manifest["entries"][name]
+        )
+        return f"https://github.com/Elwinmage/reeftech-catalog/releases/download/{record['archive']}"
 
 
 def make_catalog(root: Path) -> Path:

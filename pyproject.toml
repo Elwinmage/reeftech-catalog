@@ -12,5 +12,9 @@ known-first-party = ["catalog", "make_release", "validate", "conftest", "custom_
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["scripts", "tests/client"]
+pythonpath = ["scripts", "client", "tests/client"]
 asyncio_mode = "auto"
+
+[tool.pyright]
+# scripts/validate.py reaches client/catalog_rules.py through sys.path
+extraPaths = ["client"]

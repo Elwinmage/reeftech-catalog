@@ -9,7 +9,10 @@ from pathlib import Path
 import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.helpers.dispatcher import (
+    async_dispatcher_connect,
+    async_dispatcher_send,
+)
 from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import (
@@ -17,7 +20,7 @@ from pytest_homeassistant_custom_component.common import (
     async_fire_time_changed,
 )
 
-from conftest import Release, build_release
+from conftest import Release, build_release, dump
 from custom_components.catalog_demo import SPEC
 from custom_components.catalog_demo import catalog_runtime as rt
 
@@ -329,3 +332,72 @@ async def test_dispatcher_signal(hass, aioclient_mock, release):
     await hass.config_entries.async_unload(entry.entry_id)
     await hass.async_block_till_done()
     assert calls  # gone
+
+
+async def test_shared_user_layer(hass, aioclient_mock, release, hass_client):
+    """A writer drops entries in the shared folder and tells the integration."""
+    serve(aioclient_mock, release)
+    await setup_entry(hass)
+    updater = rt.get_updater(hass, DOMAIN)
+    shared = Path(hass.config.path("reeftech_catalog", "user", "equipment"))
+    assert shared.is_dir() and updater.shared_root == shared
+    assert "mine" not in updater.view["items"]
+
+    calls: list[None] = []
+    async_dispatcher_connect(
+        hass, rt.signal_catalog_changed(DOMAIN), lambda: calls.append(None)
+    )
+    dump(
+        shared / "items/mine/item.json",
+        {"category": "heater", "brand": "Me", "model": "1"},
+    )
+    (shared / "items/mine/image.webp").write_bytes(b"RIFFmine")
+    # Overrides the downloaded item
+    dump(
+        shared / "items/eheim/item.json",
+        {"category": "heater", "brand": "Shared", "model": "200"},
+    )
+
+    # Nothing is read until the writer says so
+    assert "mine" not in updater.view["items"]
+    async_dispatcher_send(hass, rt.SIGNAL_USER_CATALOG_CHANGED, "equipment")
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert calls and updater.user_revision == 1
+    items = updater.view["items"]
+    assert items["mine"]["source"] == "user"
+    assert (
+        items["mine"]["image"] == f"/{DOMAIN}_catalog/shared/items/mine/image.webp?v=u1"
+    )
+    assert items["eheim"]["brand"] == "Shared"  # shared layer beats the pack
+
+    http = await hass_client()
+    response = await http.get(f"/{DOMAIN}_catalog/shared/items/mine/image.webp")
+    assert response.status == 200 and await response.read() == b"RIFFmine"
+
+    # The user folder of the domain is the most specific layer
+    dump(
+        Path(hass.config.path(DOMAIN, "catalog_user")) / "items/eheim/item.json",
+        {"category": "heater", "brand": "Domain", "model": "200"},
+    )
+    # A change of another section is not for this domain; None is for all of them
+    async_dispatcher_send(hass, rt.SIGNAL_USER_CATALOG_CHANGED, "supplements")
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert (
+        updater.user_revision == 1
+        and updater.view["items"]["eheim"]["brand"] == "Shared"
+    )
+    async_dispatcher_send(hass, rt.SIGNAL_USER_CATALOG_CHANGED, None)
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert updater.user_revision == 2
+    assert updater.view["items"]["eheim"]["brand"] == "Domain"
+    assert updater.view["items"]["mine"]["image"].endswith(
+        "image.webp?v=u2"
+    )  # new stamp: browsers reload the visual
+
+    # Once the integration is unloaded, the signal is not listened to any more
+    await rt.async_unload_catalog(
+        hass, hass.config_entries.async_entries(DOMAIN)[0], SPEC
+    )
+    async_dispatcher_send(hass, rt.SIGNAL_USER_CATALOG_CHANGED, None)
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert updater.user_revision == 2

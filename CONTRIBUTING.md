@@ -27,6 +27,9 @@ drawings. No pictures copied from manufacturers' sites or shops.
 
 ```
 python scripts/validate.py
-python scripts/readme_catalog.py   # adds the new entry to the lists of README.md
 pytest
 ```
+
+The lists of `README.md` are refreshed automatically after the merge: a pull
+request only adds the folder of its entry, so that two open pull requests never
+conflict on the README.

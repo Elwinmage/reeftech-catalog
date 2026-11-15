@@ -7,7 +7,9 @@ Writes into --out:
   manifest.json   read by the integrations (published on the versioned release
                   and on the rolling '<section>-latest' release)
   notes.md        release notes (added / updated / removed entries)
-  upload/*.zip    archives of the entries that changed since --previous
+  upload/*.zip    archives of the entries that changed since --previous, and
+                  schema.zip (the JSON Schemas of the section, for tools that
+                  edit the catalog) when it changed
 
 An entry whose content did not change keeps pointing to the archive of the
 release that built it: nothing is rebuilt nor uploaded again, and consumers
@@ -34,6 +36,14 @@ CONSUMERS = {
     "supplements": ("redsea",),
     "parameters": ("reeftank", "redsea"),
 }
+# JSON Schemas (schema/<kind>.schema.json) of the entries of each section. Data
+# only: a release never carries code, which integrations would have to run.
+SCHEMA_KINDS = {
+    "equipment": ("task", "category", "item"),
+    "supplements": ("supplement",),
+    "parameters": ("parameter",),
+}
+SCHEMA_ENTRY = "schema"
 _ZIP_DATE = (1980, 1, 1, 0, 0, 0)
 
 
@@ -74,6 +84,25 @@ def _summary(root: Path, section: str, entry: Entry) -> dict:
         summary["category"] = data["category"]
         summary["unit"] = data["unit"]
     return summary
+
+
+def _schema_entry(root: Path, section: str) -> Entry:
+    """The schemas of a section (shared definitions included) as an entry."""
+    entry = Entry(SCHEMA_ENTRY, SCHEMA_ENTRY)
+    for kind in ("common", *SCHEMA_KINDS[section]):
+        name = f"{kind}.schema.json"
+        path = root / "schema" / name
+        if not path.is_file():
+            raise SystemExit(f"missing schema file {path}")
+        entry.files[name] = path
+    return entry
+
+
+def _note_line(name: str) -> str:
+    if name == SCHEMA_ENTRY:
+        return "- validation schemas"
+    kind, _, entry_id = name.partition(".")
+    return f"- `{entry_id}` ({kind})"
 
 
 def _parse_min(values: list[str], section: str) -> dict[str, str]:
@@ -136,6 +165,28 @@ def build(
             (updated if old else added).append(entry.name)
         entries[entry.name] = record
 
+    # The schemas travel like an entry, but apart from them: integrations reading
+    # the entries of the section ignore this record.
+    schema = _schema_entry(root, section)
+    schema_hash = schema.content_hash()
+    old_schema = (previous or {}).get("schema")
+    schema_record: dict = {"content_hash": schema_hash}
+    if old_schema and old_schema["content_hash"] == schema_hash:
+        schema_record |= {
+            k: old_schema[k] for k in ("archive", "sha256", "size", "since")
+        }
+    else:
+        name = f"{SCHEMA_ENTRY}.zip"
+        write_zip(schema, upload / name)
+        data = (upload / name).read_bytes()
+        schema_record |= {
+            "archive": f"{tag(section, version)}/{name}",
+            "sha256": hashlib.sha256(data).hexdigest(),
+            "size": len(data),
+            "since": version,
+        }
+        (updated if old_schema else added).append(SCHEMA_ENTRY)
+
     removed = sorted(set(old_entries) - set(entries))
     minimum = dict((previous or {}).get("min_integration", {}))
     minimum.update(min_integration or {})
@@ -143,11 +194,7 @@ def build(
     lines = [f"# {section} {version}", ""]
     for title, names in (("Added", added), ("Updated", updated), ("Removed", removed)):
         if names:
-            lines += (
-                [f"## {title}", ""]
-                + [f"- `{n.split('.', 1)[-1]}` ({n.split('.')[0]})" for n in names]
-                + [""]
-            )
+            lines += [f"## {title}", ""] + [_note_line(n) for n in names] + [""]
     if not (added or updated or removed):
         lines += ["No content change.", ""]
     notes = "\n".join(lines)
@@ -162,6 +209,7 @@ def build(
         # Shown by the update entities of the integrations
         "notes": notes,
         "entries": entries,
+        "schema": schema_record,
     }
     (out / "manifest.json").write_text(
         json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
@@ -196,7 +244,11 @@ def main(argv: list[str] | None = None) -> int:
         previous,
         _parse_min(args.min_integration, args.section),
     )
-    changed = sum(1 for e in manifest["entries"].values() if e["since"] == args.version)
+    changed = sum(
+        1
+        for e in (*manifest["entries"].values(), manifest["schema"])
+        if e["since"] == args.version
+    )
     print(
         f"{args.section} {args.version}: {len(manifest['entries'])} entries, {changed} to upload"
     )

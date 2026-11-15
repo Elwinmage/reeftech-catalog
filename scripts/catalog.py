@@ -22,18 +22,6 @@ SCHEMA_VERSION = 1
 
 SECTIONS = ("equipment", "supplements", "parameters")
 
-# Languages of the ecosystem. English is mandatory, the others are reported
-# as missing (warning) so translators know what to fill in.
-KNOWN_LANGS = ("en", "fr", "de", "es", "it", "pl", "pt")
-
-# Files allowed next to a descriptor, with their size limit in bytes.
-ASSET_FILES = {
-    "image.webp": 300_000,
-    "image.png": 300_000,
-    "thumb.webp": 40_000,
-}
-DESCRIPTOR_MAX = 32_000
-
 
 @dataclass
 class Entry:
