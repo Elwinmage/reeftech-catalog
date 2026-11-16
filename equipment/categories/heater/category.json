@@ -9,13 +9,40 @@
   "icon": "mdi:thermometer",
   "maintenance": [
     {
-      "task": "visual_inspection"
+      "task": "visual_inspection",
+      "schedule": {
+        "type": "interval",
+        "unit": "months",
+        "every": {
+          "default": 1,
+          "min": 1,
+          "max": 12
+        }
+      }
     },
     {
-      "task": "heater_test"
+      "task": "heater_test",
+      "schedule": {
+        "type": "interval",
+        "unit": "months",
+        "every": {
+          "default": 1,
+          "min": 1,
+          "max": 12
+        }
+      }
     },
     {
-      "task": "heater_clean"
+      "task": "heater_clean",
+      "schedule": {
+        "type": "interval",
+        "unit": "months",
+        "every": {
+          "default": 1,
+          "min": 1,
+          "max": 12
+        }
+      }
     }
   ]
 }
