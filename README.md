@@ -203,7 +203,7 @@ so a pull request only adds the folder of its entry.
 |  | `reactor` | Media reactor | aquarium | Reactor media replacement, Pump cleaning |
 |  | `return_pump` | Return pump | aquarium | Clean suction strainer, Pump cleaning, Descale pump, Replace wear parts kit |
 | <img src="equipment/categories/skimmer/thumb.webp" width="48" alt=""> | `skimmer` | Protein skimmer | aquarium | Clean collection cup, Clean venturi and air line, Clean needle wheel, Descale skimmer body, Replace wear parts kit |
-|  | `uv_sterilizer` | UV sterilizer | aquarium, pool | UV lamp replacement, Quartz sleeve cleaning |
+| <img src="equipment/categories/uv_sterilizer/thumb.webp" width="48" alt=""> | `uv_sterilizer` | UV sterilizer | aquarium, pool | UV lamp replacement, Quartz sleeve cleaning |
 |  | `ventilation` | Ventilation unit | home | Ventilation filters, Air vents cleaning |
 |  | `water_softener` | Water softener | home | Softener salt, Softener servicing |
 
