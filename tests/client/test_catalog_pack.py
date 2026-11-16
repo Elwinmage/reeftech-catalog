@@ -422,3 +422,8 @@ def test_resolve_maintenance():
     assert [t["task"] for t in only] == ["service"] and only[0]["regulatory"] is False
     assert cp.resolve_maintenance(view, item_id="unknown") == []
     assert cp.resolve_maintenance(view) == []
+
+
+def test_archive_of_a_section_with_an_underscore():
+    assert cp._ARCHIVE_RE.match("water_tests-2026.11.0/items.zip")
+    assert not cp._ARCHIVE_RE.match("water-tests/../x.zip")

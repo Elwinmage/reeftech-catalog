@@ -15,6 +15,7 @@ on:
       - "equipment/**"
       - "supplements/**"
       - "parameters/**"
+      - "water_tests/**"
       - "scripts/catalog.py"
       - "scripts/readme_catalog.py"
   workflow_dispatch:

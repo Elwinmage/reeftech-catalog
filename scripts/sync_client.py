@@ -29,7 +29,7 @@ from pathlib import Path
 from catalog import collect, entry_id, read_json
 
 REPO = Path(__file__).resolve().parent.parent
-CLIENT_FILES = ("catalog_pack.py", "catalog_runtime.py")
+CLIENT_FILES = ("catalog_pack.py", "catalog_runtime.py", "catalog_conversion.py")
 HEADER = "# Generated from reeftech-catalog/client/{name} by scripts/sync_client.py: do not edit this copy.\n"
 
 #: Modules only some domains need, besides CLIENT_FILES

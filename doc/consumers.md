@@ -11,9 +11,14 @@ copied into each integration by `scripts/sync_client.py`.
 | `reef_maintenance` | equipment | task library, categories and items with scope `aquarium` |
 | `maintenance_hub` | equipment | everything |
 | `redsea` | supplements | everything |
+| `redsea`, `reeftank` | water_tests | everything (ReefDose turns a titration amount into a value with `catalog_conversion.py`) |
 
 Both maintenance integrations may be installed together; each keeps its own
 copy so that neither depends on the other.
+
+Limit: a `CatalogUpdater` is registered per domain, so a domain reading two
+sections (redsea: supplements and water tests) needs the registry of
+`catalog_runtime` keyed by (domain, section) first.
 
 ## The client
 
@@ -159,7 +164,7 @@ The cards never call the network. Each integration answers:
 
 - `<domain>/catalog` (`refresh`: optional, re-reads the folders): `{section,
   format, version, updating, data}`. For equipment `data` holds `tasks`,
-  `categories` and `items`; for supplements `items`. Every category, item
+  `categories` and `items`; for supplements and water tests `items`. Every category, item
   and supplement carries `image`, `thumb` (URLs or null) and `source`
   (`builtin`, `pack`, `user`); items carry their resolved `scopes`.
 - `<domain>/catalog/subscribe`: an event `{version, updating}` each time it

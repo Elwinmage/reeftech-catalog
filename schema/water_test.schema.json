@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Elwinmage/reeftech-catalog/schema/water_test.schema.json",
+  "title": "Water test (water_tests/items/<id>/water_test.json)",
+  "description": "A water test product (a kit, a checker) and the tests it holds. Each test measures one parameter, either read directly as a value or by titration: the amount of reagent used is turned into a value with the table of the manufacturer. A kit with several tests (calcium, KH, magnesium...) lists them all; two ranges of the same parameter are two products.",
+  "type": "object",
+  "required": ["brand", "name", "tests", "verified"],
+  "additionalProperties": false,
+  "properties": {
+    "brand": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "name": {
+      "description": "Product name as printed by the manufacturer (not translated).",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 96
+    },
+    "tests": {
+      "description": "The tests of the product, one per parameter.",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 12,
+      "items": {
+        "type": "object",
+        "required": ["parameter", "unit", "method"],
+        "additionalProperties": false,
+        "properties": {
+          "parameter": {
+            "description": "Id of the parameter measured (an entry of the parameters catalog).",
+            "$ref": "common.schema.json#/$defs/id"
+          },
+          "unit": {
+            "description": "Unit of the values, which is the unit of the parameter.",
+            "enum": ["dkh", "ppm", "ppb", "mg_l", "ph", "sg", "ppt"]
+          },
+          "method": {
+            "description": "direct: the value is read (electronic checker, colour chart). titration: the amount of reagent used is converted with the table.",
+            "enum": ["direct", "titration"]
+          },
+          "range": {
+            "description": "Values the test can read, for a direct test (a titration takes it from its table).",
+            "type": "object",
+            "required": ["min", "max"],
+            "additionalProperties": false,
+            "properties": {
+              "min": { "type": "number" },
+              "max": { "type": "number" }
+            }
+          },
+          "resolution": {
+            "description": "Smallest step the test can tell apart, in the unit of the values.",
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "table": {
+            "description": "Titration only: points amount of reagent -> value; between two points the value is interpolated linearly.",
+            "type": "object",
+            "required": ["amount_unit", "points"],
+            "additionalProperties": false,
+            "properties": {
+              "amount_unit": {
+                "description": "How the reagent is counted.",
+                "enum": ["ml", "drops"]
+              },
+              "points": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 60,
+                "items": {
+                  "type": "object",
+                  "required": ["amount", "value"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "amount": { "type": "number", "minimum": 0 },
+                    "value": { "type": "number", "minimum": 0 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "verified": {
+      "description": "Conversion data checked against the manufacturer's manual. Unverified tests are not used by automatic dose proposals.",
+      "type": "boolean"
+    },
+    "source": {
+      "description": "Where the data comes from (manual, label, URL). Required when verified.",
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 300
+    }
+  }
+}

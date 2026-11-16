@@ -60,6 +60,20 @@ EFFECT_BOUNDS = {
     ("i", "ppm"): (0.00001, 0.1),
     ("fe", "ppm"): (0.00001, 0.1),
 }
+# Plausible readings of a water test, per (parameter, unit). A table value
+# outside these bounds is almost surely a typo (factor 10, wrong unit) and could
+# make a dose proposal dangerous, so it is an error.
+READING_BOUNDS = {
+    ("kh", "dkh"): (0, 50),
+    ("ca", "ppm"): (0, 2000),
+    ("mg", "ppm"): (0, 4000),
+    ("k", "ppm"): (0, 1500),
+    ("sr", "ppm"): (0, 50),
+    ("no3", "ppm"): (0, 500),
+    ("po4", "ppm"): (0, 10),
+    ("i", "ppb"): (0, 1000),
+    ("fe", "ppm"): (0, 2),
+}
 # Brine concentration bounds (g/L); natural sea water is about 35 g/L and
 # salt stops dissolving around 360 g/L.
 BRINE_BOUNDS = (50, 350)
@@ -74,6 +88,7 @@ DESCRIPTORS = {
     "item": "item.json",
     "supplement": "supplement.json",
     "parameter": "parameter.json",
+    "water_test": "water_test.json",
 }
 #: Folder of each kind, from the root of the repository
 FOLDERS = {
@@ -82,6 +97,7 @@ FOLDERS = {
     "item": "equipment/items",
     "supplement": "supplements/items",
     "parameter": "parameters/items",
+    "water_test": "water_tests/items",
 }
 
 
@@ -107,6 +123,7 @@ class Context:
     categories: dict[str, dict[str, Any]] = field(default_factory=dict)
     supplements: dict[str, dict[str, Any]] = field(default_factory=dict)
     parameters: dict[str, dict[str, Any]] = field(default_factory=dict)
+    water_tests: dict[str, dict[str, Any]] = field(default_factory=dict)
 
 
 def where_of(kind: str, entry_id: str) -> str:
@@ -353,12 +370,94 @@ def _check_parameter(report, where, entry_id, data, files, ctx) -> None:
             report.warn(where, "reference band without a source")
 
 
+def _check_reading(report, where, key, values) -> None:
+    """Every value of a test is a plausible reading of its parameter."""
+    bounds = READING_BOUNDS.get(key)
+    if bounds is None:
+        return
+    for value in values:
+        if not bounds[0] <= value <= bounds[1]:
+            report.error(
+                where,
+                f"{value} {key[1]} is implausible for {key[0]} "
+                f"(expected {bounds[0]}..{bounds[1]})",
+            )
+
+
+def _check_table(report, where, table) -> list[float]:
+    """Amounts strictly increasing, values strictly monotone; the values."""
+    points = table["points"]
+    amounts = [point["amount"] for point in points]
+    values = [point["value"] for point in points]
+    if any(prev >= amount for prev, amount in pairwise(amounts)):
+        report.error(where, "table amounts must be strictly increasing")
+    steps = [value - prev for prev, value in pairwise(values)]
+    if not (all(step > 0 for step in steps) or all(step < 0 for step in steps)):
+        report.error(where, "table values must be strictly increasing or decreasing")
+    return values
+
+
+def _check_test(report, where, test, parameters) -> None:
+    key = (test["parameter"], test["unit"])
+    if parameters:
+        parameter = parameters.get(test["parameter"])
+        if parameter is None:
+            report.error(where, f"unknown parameter {test['parameter']!r}")
+        elif parameter["unit"] != test["unit"]:
+            report.error(
+                where,
+                f"unit {test['unit']!r} differs from the one of the parameter "
+                f"({parameter['unit']!r})",
+            )
+    if test["method"] == "direct":
+        if "table" in test:
+            report.error(where, "a direct test has no table")
+        band = test.get("range")
+        if band:
+            if band["min"] >= band["max"]:
+                report.error(where, "range min must be below max")
+            _check_reading(report, where, key, (band["min"], band["max"]))
+        return
+    if "range" in test:
+        report.error(where, "a titration takes its range from its table")
+    if "table" not in test:
+        report.error(where, "a titration needs its table")
+        return
+    _check_reading(report, where, key, _check_table(report, where, test["table"]))
+
+
+def _check_water_test(report, where, entry_id, data, files, ctx) -> None:
+    brand, name = data["brand"].lower(), data["name"].lower()
+    for other_id, other in ctx.water_tests.items():
+        if (
+            other.get("brand", "").lower() == brand
+            and other.get("name", "").lower() == name
+        ):
+            report.error(
+                where, f"{data['brand']} {data['name']} is already {other_id!r}"
+            )
+            break
+    seen = set()
+    for index, test in enumerate(data["tests"]):
+        if test["parameter"] in seen:
+            report.error(where, f"parameter {test['parameter']!r} listed twice")
+        seen.add(test["parameter"])
+        _check_test(report, f"{where} tests[{index}]", test, ctx.parameters)
+    if data["verified"] and "source" not in data:
+        report.error(where, "verified conversion data needs a source")
+    if not data["verified"]:
+        report.warn(where, "not verified: not used for automatic dose proposals")
+    if not _has_image(files):
+        report.warn(where, "no picture, the generic test will be shown")
+
+
 _RULES = {
     "task": _check_task,
     "category": _check_category,
     "item": _check_item,
     "supplement": _check_supplement,
     "parameter": _check_parameter,
+    "water_test": _check_water_test,
 }
 
 

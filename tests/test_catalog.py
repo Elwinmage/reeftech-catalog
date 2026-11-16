@@ -77,6 +77,7 @@ def root(tmp_path: Path) -> Path:
             "source": "program",
         },
     )
+    (tmp_path / "water_tests/items").mkdir(parents=True)
     return tmp_path
 
 
@@ -414,6 +415,22 @@ def test_release_parameters_summary(root, tmp_path):
     assert manifest["section"] == "parameters" and manifest["format"] == 1
 
 
+def test_release_water_tests_summary(root, tmp_path):
+    dump(
+        root / "water_tests/items/rs/water_test.json",
+        {
+            "brand": "Red Sea",
+            "name": "Kit",
+            "tests": [{"parameter": "no3", "unit": "ppm", "method": "direct"}],
+            "verified": False,
+        },
+    )
+    manifest = make_release.build(root, "water_tests", "2026.11.0", tmp_path / "out")
+    entry = manifest["entries"]["water_test.rs"]
+    assert entry["brand"] == "Red Sea" and entry["parameters"] == ["no3"]
+    assert manifest["section"] == "water_tests"
+
+
 def test_release_argument_checks(root, tmp_path):
     with pytest.raises(SystemExit):
         make_release.build(root, "equipment", "v1", tmp_path)
@@ -562,8 +579,8 @@ def test_sync_client(root, tmp_path, capsys):
     ).exists()
 
     stale = sync_client.sync(base, root=root)
-    # 2 integrations x (2 modules + snapshot), the editor: 3 modules, no snapshot
-    assert len(stale) == 9
+    # 2 integrations x (3 modules + snapshot), the editor: 4 modules (with the rules), no snapshot
+    assert len(stale) == 12
     editor = base / "reeftech_catalog_editor/custom_components/reeftech_catalog_editor"
     assert (
         (editor / "catalog_rules.py")

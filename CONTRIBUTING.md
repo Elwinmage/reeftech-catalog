@@ -18,6 +18,15 @@ Create `supplements/items/<brand>-<name>/supplement.json` with its Red Sea
 (`effects`) must come from the manufacturer: give the `source` and set
 `verified` to `true` only once it has been checked.
 
+## Add a water test
+
+Create `water_tests/items/<brand>-<name>/water_test.json`: one entry per
+product (kit or checker), with one `tests[]` item per measured parameter. For a
+titration copy the points `amount -> value` of the manufacturer manual into
+`table` (amounts strictly increasing, values strictly monotone), give the
+`source` and set `verified` to `true` only once checked. Two ranges of the same
+parameter are two products.
+
 ## Visuals
 
 Only visuals you are allowed to share under CC BY 4.0: your own photos or

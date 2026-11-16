@@ -1,7 +1,7 @@
 # reeftech-catalog
 
 Data catalog of the ReefTech ecosystem: non-connected equipment with their
-maintenance tasks, and dosing supplements. Adding a heater model or a new
+maintenance tasks, dosing supplements, reference parameters and water tests. Adding a heater model or a new
 supplement is a pull request here, not a new release of the integrations or of
 the cards.
 
@@ -9,6 +9,7 @@ the cards.
 |---|---|---|---|
 | `equipment` | task library, equipment categories (generic image and tasks), equipment models | [reef_maintenance](https://github.com/Elwinmage/ha-reef-maintenance-component) (scope `aquarium`), [maintenance_hub](https://github.com/Elwinmage/ha-maintenance-hub) (all scopes) | ha-reef-card (RSPower sockets, maintenance view), maintenance hub card |
 | `supplements` | supplements, bottle visuals, dosing data | [redsea](https://github.com/Elwinmage/ha-reefbeat-component) | ha-reef-card (ReefDose) |
+| `water_tests` | water test kits and checkers, with the conversion tables of their titrations | [redsea](https://github.com/Elwinmage/ha-reefbeat-component), [reeftank](https://github.com/Elwinmage/ha-reeftank-component) | ha-reef-card (ReefDose) |
 
 The cards never access the network: integrations download the releases, check
 them, keep them under `<config>` and serve them locally, with a built-in
@@ -33,12 +34,52 @@ supplements/
   items/<supplement_id>/
     supplement.json             kind, colour, dosing data
     image.webp / thumb.webp     bottle visual (optional, generic bottle otherwise)
+water_tests/
+  items/<water_test_id>/
+    water_test.json             brand, name, tests (parameter, method, table)
+    image.webp / thumb.webp     product visual (optional)
 scripts/                        validate.py, make_release.py, sync_client.py
 client/                         catalog client copied into the integrations
 ```
 
 A file or folder name is the entry id. Ids are **stable**: user
 configurations refer to them, so an entry is never renamed, only removed.
+
+## Water tests
+
+A product (a kit, an electronic checker) holds one or several **tests**, each
+measuring one `parameter` of the parameters catalog, in the unit of that
+parameter. Two ranges of the same parameter are two products.
+
+- `method: direct`: the value is read (checker, colour chart). An optional
+  `range` says what the test can read.
+- `method: titration`: the user counts the reagent used (`ml` or `drops`) and
+  the manufacturer `table` (points `amount -> value`) turns it into a value;
+  between two points the value is interpolated linearly, outside the table
+  nothing is extrapolated. The readable range comes from the table.
+- Tables come from the manufacturer manuals; `verified: true` needs a `source`.
+  Unverified tests are never used for automatic dose proposals.
+
+```json
+{
+  "brand": "Red Sea",
+  "name": "Reef Foundation Test Kit",
+  "tests": [
+    {
+      "parameter": "kh",
+      "unit": "dkh",
+      "method": "titration",
+      "table": {
+        "amount_unit": "ml",
+        "points": [{"amount": 0.5, "value": 12}, {"amount": 1, "value": 6}]
+      }
+    }
+  ],
+  "verified": false
+}
+```
+
+`client/catalog_conversion.py` does the conversion for the consumers.
 
 ## Equipment
 
@@ -341,6 +382,11 @@ so a pull request only adds the folder of its entry.
 | Fe | Iron | trace element | ppb |  |
 | NO3 | Nitrate | nutrient | ppm | 1-10 (5) |
 | PO4 | Phosphate | nutrient | ppm | 0.02-0.1 (0.05) |
+
+### Water tests (0, 0 brands)
+
+| | Brand | Test | Parameters |
+|---|---|---|---|
 
 <!-- catalog:end -->
 

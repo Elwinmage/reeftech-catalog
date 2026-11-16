@@ -39,7 +39,7 @@ def ctx() -> rules.Context:
             },
             "pack": {"kind": "bundle", "bundle": []},
         },
-        parameters={"kh": {"symbol": "KH", "effect_parameter": "kh"}},
+        parameters={"kh": {"symbol": "KH", "effect_parameter": "kh", "unit": "dkh"}},
     )
 
 
@@ -191,3 +191,106 @@ def test_schemas_of_a_release_are_enough(validators, ctx, tmp_path):
         {"category": "heater", "brand": "E", "model": "1"},
     )
     assert report.errors == []
+
+
+TABLE = {
+    "amount_unit": "ml",
+    "points": [{"amount": 0.5, "value": 12}, {"amount": 1, "value": 6}],
+}
+
+
+def water_test(**test):
+    base = {"parameter": "kh", "unit": "dkh", "method": "titration", "table": TABLE}
+    return {
+        "brand": "Red Sea",
+        "name": "Kit",
+        "tests": [{**base, **test}],
+        "verified": True,
+        "source": "manual",
+    }
+
+
+def test_valid_water_test(validators, ctx):
+    report = draft(validators, ctx, "water_test", "rs", water_test())
+    assert report.errors == []
+    assert report.warnings == [
+        "water_tests/items/rs: no picture, the generic test will be shown"
+    ]
+    direct = water_test(method="direct", range={"min": 0, "max": 20})
+    del direct["tests"][0]["table"]
+    assert (
+        draft(validators, ctx, "water_test", "rs", direct, {"image.webp": 1}).errors
+        == []
+    )
+
+
+def test_water_test_rules(validators, ctx):
+    data = water_test()
+    data["verified"] = False
+    data["tests"].append(dict(data["tests"][0]))
+    found = draft(validators, ctx, "water_test", "rs", data)
+    assert any("listed twice" in e for e in found.errors)
+    assert any("not verified" in w for w in found.warnings)
+    del data["source"]
+    data["verified"] = True
+    assert any(
+        "needs a source" in e
+        for e in draft(validators, ctx, "water_test", "rs", data).errors
+    )
+    ctx.water_tests["other"] = {"brand": "red sea", "name": "KIT"}
+    assert any(
+        "already 'other'" in e
+        for e in draft(validators, ctx, "water_test", "rs", water_test()).errors
+    )
+
+
+def test_water_test_parameter_checks(validators, ctx):
+    found = draft(validators, ctx, "water_test", "a", water_test(parameter="zz")).errors
+    assert any("unknown parameter 'zz'" in e for e in found)
+    found = draft(validators, ctx, "water_test", "a", water_test(unit="ppm")).errors
+    assert any("differs from the one of the parameter" in e for e in found)
+    # Without parameters in the context nothing is cross-checked
+    ctx.parameters.clear()
+    assert (
+        draft(validators, ctx, "water_test", "a", water_test(parameter="zz")).errors
+        == []
+    )
+
+
+def test_water_test_methods(validators, ctx):
+    def errors(**test):
+        return draft(validators, ctx, "water_test", "a", water_test(**test)).errors
+
+    assert any("takes its range" in e for e in errors(range={"min": 0, "max": 1}))
+    no_table = water_test()
+    del no_table["tests"][0]["table"]
+    assert any(
+        "needs its table" in e
+        for e in draft(validators, ctx, "water_test", "a", no_table).errors
+    )
+    assert any(
+        "no table" in e for e in errors(method="direct", range={"min": 0, "max": 9})
+    )
+    flat = water_test(method="direct", range={"min": 5, "max": 5})
+    del flat["tests"][0]["table"]
+    assert any(
+        "below max" in e for e in draft(validators, ctx, "water_test", "a", flat).errors
+    )
+
+
+def test_water_test_tables(validators, ctx):
+    def errors(points):
+        table = {"amount_unit": "ml", "points": points}
+        return draft(validators, ctx, "water_test", "a", water_test(table=table)).errors
+
+    p = lambda a, v: {"amount": a, "value": v}  # noqa: E731
+    assert any("amounts must be strictly" in e for e in errors([p(1, 5), p(1, 6)]))
+    assert any("values must be strictly" in e for e in errors([p(1, 5), p(2, 5)]))
+    assert any(
+        "values must be strictly" in e for e in errors([p(1, 5), p(2, 7), p(3, 6)])
+    )
+    assert any("implausible" in e for e in errors([p(1, 5), p(2, 70)]))
+    # Unknown (parameter, unit): no plausibility bound
+    odd = water_test(parameter="ph", unit="ph")
+    ctx.parameters["ph"] = {"symbol": "pH", "unit": "ph"}
+    assert draft(validators, ctx, "water_test", "a", odd).errors == []

@@ -8,6 +8,7 @@ so an entry can never disagree with its location.
     equipment/items/<item_id>/item.json              [+ image.webp, thumb.webp]
     supplements/items/<supplement_id>/supplement.json [+ image.webp, thumb.webp]
     parameters/items/<parameter_id>/parameter.json    [+ image.webp, thumb.webp]
+    water_tests/items/<water_test_id>/water_test.json [+ image.webp, thumb.webp]
 """
 
 from __future__ import annotations
@@ -20,7 +21,7 @@ from pathlib import Path
 # Bumped only on breaking changes: consumers skip releases they cannot read.
 SCHEMA_VERSION = 1
 
-SECTIONS = ("equipment", "supplements", "parameters")
+SECTIONS = ("equipment", "supplements", "parameters", "water_tests")
 
 
 @dataclass
@@ -28,7 +29,7 @@ class Entry:
     """One release unit: a set of files archived together."""
 
     name: str  # release entry name, e.g. "item.eheim-thermocontrol-200"
-    kind: str  # tasks | category | item | supplement
+    kind: str  # tasks | category | item | supplement | parameter | water_test
     files: dict[str, Path] = field(default_factory=dict)  # archive name -> path
     data: dict = field(default_factory=dict)  # parsed descriptor(s)
 
@@ -72,6 +73,8 @@ def collect(root: Path, section: str) -> list[Entry]:
         layout = (("items", "supplement"),)
     elif section == "parameters":
         layout = (("items", "parameter"),)
+    elif section == "water_tests":
+        layout = (("items", "water_test"),)
     else:
         raise ValueError(f"unknown section {section!r}")
 

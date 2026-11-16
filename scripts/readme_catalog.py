@@ -1,8 +1,8 @@
 """Write the lists of the catalog into README.md.
 
-The equipment categories, equipment models, maintenance tasks and supplements
-of the catalog are listed, with their visuals, between two markers of the
-README; the rest of the file is left alone:
+The equipment categories, equipment models, maintenance tasks, supplements,
+parameters and water tests of the catalog are listed, with their visuals,
+between two markers of the README; the rest of the file is left alone:
 
     <!-- catalog:begin -->
     ...generated...
@@ -299,6 +299,36 @@ def supplements_table(root: Path) -> list[str]:
     return lines
 
 
+def _methods(data: dict) -> str:
+    """The tests of a kit, e.g. 'KH (titration), NO3 (direct)'."""
+    return ", ".join(
+        f"{PARAMETERS.get(str(t.get('parameter')), t.get('parameter'))} "
+        f"({t.get('method')})"
+        for t in data.get("tests", [])
+    )
+
+
+def water_tests_table(root: Path) -> list[str]:
+    folders = _folders(root / "water_tests" / "items")
+    entries = [(folder, read_json(folder / "water_test.json")) for folder in folders]
+    entries.sort(
+        key=lambda e: (str(e[1].get("brand", "")).lower(), _name(e[1], "").lower())
+    )
+    brands = sorted({str(data.get("brand", "")) for _, data in entries})
+    lines = [
+        f"### Water tests ({len(entries)}, {len(brands)} brands)",
+        "",
+        "| | Brand | Test | Parameters |",
+        "|---|---|---|---|",
+    ]
+    for folder, data in entries:
+        lines.append(
+            f"| {_visual(root, folder)} | {_cell(data.get('brand', ''))} "
+            f"| {_cell(_name(data, folder.name))} | {_cell(_methods(data))} |"
+        )
+    return lines
+
+
 def render(root: Path) -> str:
     """The generated block, markers included."""
     tasks = _tasks(root)
@@ -308,6 +338,7 @@ def render(root: Path) -> str:
         tasks_table(root, tasks),
         supplements_table(root),
         parameters_table(root),
+        water_tests_table(root),
     ]
     lines = [
         BEGIN,

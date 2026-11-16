@@ -122,6 +122,18 @@ def root(tmp_path: Path) -> Path:
         tmp_path / "supplements/items/food/supplement.json",
         {"brand": "Acme", "name": "Food", "kind": "food"},
     )
+    dump(
+        tmp_path / "water_tests/items/red-sea-kit/water_test.json",
+        {
+            "brand": "Red Sea",
+            "name": "Kit",
+            "tests": [
+                {"parameter": "kh", "method": "titration"},
+                {"parameter": "no3", "method": "direct"},
+            ],
+        },
+    )
+    (tmp_path / "water_tests/items/red-sea-kit/image.webp").write_bytes(b"x")
     (tmp_path / "README.md").write_text(
         "# Catalog\n\nIntro.\n\n" + rc.BEGIN + "\nold\n" + rc.END + "\n\n## End\n",
         encoding="utf-8",
@@ -166,6 +178,15 @@ def test_render(root: Path) -> None:
     assert (
         '| <img src="supplements/items/kh/image.webp" width="48" alt=""> '
         "| Red Sea | KH | KH | +0.1 dKH KH |"
+    ) in lines
+
+
+def test_water_tests_render(root: Path) -> None:
+    lines = rc.render(root).splitlines()
+    assert "### Water tests (1, 1 brands)" in lines
+    assert (
+        '| <img src="water_tests/items/red-sea-kit/image.webp" width="48" alt=""> '
+        "| Red Sea | Kit | KH (titration), NO3 (direct) |"
     ) in lines
 
 

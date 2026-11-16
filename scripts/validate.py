@@ -96,9 +96,18 @@ def _check_supplements(root: Path, report: Report, validators) -> None:
     check_bundles(report, ctx.supplements)
 
 
-def _check_parameters(root: Path, report: Report, validators) -> None:
+def _check_parameters(root: Path, report: Report, validators) -> Context:
     ctx = Context()
     _check_kind(root, report, validators, ctx, "parameters", "parameter", "parameters")
+    return ctx
+
+
+def _check_water_tests(root: Path, report: Report, validators, parameters) -> None:
+    # The tests refer to the parameters they measure
+    ctx = Context(parameters=parameters)
+    _check_kind(
+        root, report, validators, ctx, "water_tests", "water_test", "water_tests"
+    )
 
 
 def validate(root: Path) -> Report:
@@ -109,7 +118,8 @@ def validate(root: Path) -> Report:
             report.error(section, "section folder missing")
     _check_equipment(root, report, validators)
     _check_supplements(root, report, validators)
-    _check_parameters(root, report, validators)
+    parameters = _check_parameters(root, report, validators)
+    _check_water_tests(root, report, validators, parameters.parameters)
     return report
 
 

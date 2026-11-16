@@ -26,7 +26,7 @@ user folders share the repository layout of the section:
 
     tasks/<task_id>.json                                 (equipment)
     categories/<id>/category.json [+ image.webp, ...]   (equipment)
-    items/<id>/item.json | supplement.json | parameter.json [+ ...]
+    items/<id>/item.json | supplement.json | parameter.json | water_test.json [+ ...]
 
 A manifest may also carry a `schema` record: the JSON Schemas the entries of
 the section are checked against (data only, no code), for tools that edit the
@@ -63,11 +63,13 @@ KIND_LAYOUT: dict[str, tuple[str, str | None]] = {
     "item": ("items", "item.json"),
     "supplement": ("items", "supplement.json"),
     "parameter": ("items", "parameter.json"),
+    "water_test": ("items", "water_test.json"),
 }
 SECTION_KINDS: dict[str, frozenset[str]] = {
     "equipment": frozenset({"tasks", "category", "item"}),
     "supplements": frozenset({"supplement"}),
     "parameters": frozenset({"parameter"}),
+    "water_tests": frozenset({"water_test"}),
 }
 #: Kind of the manifest `schema` record (not an entry of the section)
 SCHEMA_KIND = "schema"
@@ -88,7 +90,7 @@ _ID_RE = re.compile(r"^[a-z0-9]+(?:[-_][a-z0-9]+)*$")
 _FILE_RE = re.compile(r"^[A-Za-z0-9_@.-]{1,120}$")
 _SHA_RE = re.compile(r"^[0-9a-f]{64}$")
 _VERSION_RE = re.compile(r"^[0-9A-Za-z._+-]{1,40}$")
-_ARCHIVE_RE = re.compile(r"^[a-z]+-[0-9A-Za-z._+-]{1,40}/[A-Za-z0-9_.-]{1,120}\.zip$")
+_ARCHIVE_RE = re.compile(r"^[a-z_]+-[0-9A-Za-z._+-]{1,40}/[A-Za-z0-9_.-]{1,120}\.zip$")
 
 
 class PackError(Exception):

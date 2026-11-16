@@ -35,6 +35,7 @@ CONSUMERS = {
     "equipment": ("reef_maintenance", "maintenance_hub"),
     "supplements": ("redsea",),
     "parameters": ("reeftank", "redsea"),
+    "water_tests": ("redsea", "reeftank"),
 }
 # JSON Schemas (schema/<kind>.schema.json) of the entries of each section. Data
 # only: a release never carries code, which integrations would have to run.
@@ -42,6 +43,7 @@ SCHEMA_KINDS = {
     "equipment": ("task", "category", "item"),
     "supplements": ("supplement",),
     "parameters": ("parameter",),
+    "water_tests": ("water_test",),
 }
 SCHEMA_ENTRY = "schema"
 _ZIP_DATE = (1980, 1, 1, 0, 0, 0)
@@ -83,6 +85,10 @@ def _summary(root: Path, section: str, entry: Entry) -> dict:
         data = read_json(entry.files["parameter.json"])
         summary["category"] = data["category"]
         summary["unit"] = data["unit"]
+    elif entry.kind == "water_test":
+        data = read_json(entry.files["water_test.json"])
+        summary["brand"] = data["brand"]
+        summary["parameters"] = [test["parameter"] for test in data["tests"]]
     return summary
 
 
