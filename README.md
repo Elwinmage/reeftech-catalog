@@ -195,7 +195,7 @@ so a pull request only adds the folder of its entry.
 |  | `fan` | Cooling fan | aquarium | Fan cleaning |
 |  | `fireplace` | Fireplace or stove | home | Chimney sweeping |
 |  | `heat_pump` | Heat pump | pool, home | Evaporator cleaning |
-|  | `heater` | Heater | aquarium | Visual inspection, Heater test, Heater cleaning |
+| <img src="equipment/categories/heater/thumb.webp" width="48" alt=""> | `heater` | Heater | aquarium | Visual inspection, Heater test, Heater cleaning |
 |  | `other` | Other equipment | aquarium, pool, home | Visual inspection |
 |  | `pool_basin` | Pool | pool | Pool winterizing, Pool restart |
 |  | `pool_filter` | Pool filter | pool | Filter backwash |
