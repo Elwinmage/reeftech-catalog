@@ -1,0 +1,7 @@
+{
+  "model": "thermocontrol 300",
+  "brand": "Eheim",
+  "category": "heater",
+  "icon": "mdi:radiator",
+  "power_w": 300
+}
