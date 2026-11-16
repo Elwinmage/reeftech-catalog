@@ -191,7 +191,7 @@ so a pull request only adds the folder of its entry.
 |  | `ato_pump` | Top-off pump | aquarium | Level sensor cleaning, Pump cleaning |
 |  | `boiler` | Boiler | home | Boiler servicing |
 |  | `chiller` | Chiller | aquarium | Condenser cleaning |
-|  | `circulation_pump` | Circulation pump | aquarium | Pump cleaning, Clean magnet holder and mount, Descale pump, Replace wear parts kit |
+| <img src="equipment/categories/circulation_pump/thumb.webp" width="48" alt=""> | `circulation_pump` | Circulation pump | aquarium | Pump cleaning, Clean magnet holder and mount, Descale pump, Replace wear parts kit |
 |  | `fan` | Cooling fan | aquarium | Fan cleaning |
 |  | `fireplace` | Fireplace or stove | home | Chimney sweeping |
 |  | `heat_pump` | Heat pump | pool, home | Evaporator cleaning |
@@ -202,7 +202,7 @@ so a pull request only adds the folder of its entry.
 |  | `pool_pump` | Pool pump | pool | Pre-filter basket |
 |  | `reactor` | Media reactor | aquarium | Reactor media replacement, Pump cleaning |
 |  | `return_pump` | Return pump | aquarium | Clean suction strainer, Pump cleaning, Descale pump, Replace wear parts kit |
-|  | `skimmer` | Protein skimmer | aquarium | Clean collection cup, Clean venturi and air line, Clean needle wheel, Descale skimmer body, Replace wear parts kit |
+| <img src="equipment/categories/skimmer/thumb.webp" width="48" alt=""> | `skimmer` | Protein skimmer | aquarium | Clean collection cup, Clean venturi and air line, Clean needle wheel, Descale skimmer body, Replace wear parts kit |
 |  | `uv_sterilizer` | UV sterilizer | aquarium, pool | UV lamp replacement, Quartz sleeve cleaning |
 |  | `ventilation` | Ventilation unit | home | Ventilation filters, Air vents cleaning |
 |  | `water_softener` | Water softener | home | Softener salt, Softener servicing |
@@ -212,11 +212,11 @@ so a pull request only adds the folder of its entry.
 | | Brand | Model | Category | Power | Tasks |
 |---|---|---|---|---|---|
 | <img src="equipment/items/eheim-thermocontrol-200/thumb.webp" width="48" alt=""> | Eheim | thermocontrol 200 | Heater | 200 W | Visual inspection, Heater test, Heater cleaning |
-|  | Jebao | SLW / MLW / SCP / SOW | Circulation pump |  | Pump cleaning, Clean magnet holder and mount, Descale pump, Replace wear parts kit |
+| <img src="equipment/categories/circulation_pump/thumb.webp" width="48" alt=""> | Jebao | SLW / MLW / SCP / SOW | Circulation pump |  | Pump cleaning, Clean magnet holder and mount, Descale pump, Replace wear parts kit |
 |  | Jebao | DCP / MDP | Return pump |  | Clean suction strainer, Pump cleaning, Descale pump, Replace wear parts kit |
-|  | Tunze | Turbelle nanostream | Circulation pump |  | Pump cleaning, Clean magnet holder and mount, Descale pump, Replace wear parts kit |
-|  | Tunze | Silence / Silence PRO | Circulation pump |  | Clean suction strainer, Pump cleaning, Descale pump, Replace wear parts kit |
-|  | Tunze | Turbelle stream / stream 3 | Circulation pump |  | Pump cleaning, Clean magnet holder and mount, Descale pump, Replace wear parts kit |
+| <img src="equipment/categories/circulation_pump/thumb.webp" width="48" alt=""> | Tunze | Turbelle nanostream | Circulation pump |  | Pump cleaning, Clean magnet holder and mount, Descale pump, Replace wear parts kit |
+| <img src="equipment/categories/circulation_pump/thumb.webp" width="48" alt=""> | Tunze | Silence / Silence PRO | Circulation pump |  | Clean suction strainer, Pump cleaning, Descale pump, Replace wear parts kit |
+| <img src="equipment/categories/circulation_pump/thumb.webp" width="48" alt=""> | Tunze | Turbelle stream / stream 3 | Circulation pump |  | Pump cleaning, Clean magnet holder and mount, Descale pump, Replace wear parts kit |
 
 ### Maintenance tasks (42)
 
