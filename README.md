@@ -207,11 +207,12 @@ so a pull request only adds the folder of its entry.
 |  | `ventilation` | Ventilation unit | home | Ventilation filters, Air vents cleaning |
 |  | `water_softener` | Water softener | home | Softener salt, Softener servicing |
 
-### Equipment models (6)
+### Equipment models (7)
 
 | | Brand | Model | Category | Power | Tasks |
 |---|---|---|---|---|---|
 | <img src="equipment/items/eheim-thermocontrol-200/thumb.webp" width="48" alt=""> | Eheim | thermocontrol 200 | Heater | 200 W | Visual inspection, Heater test, Heater cleaning |
+| <img src="equipment/items/eheim-thermocontrol-300/thumb.webp" width="48" alt=""> | Eheim | thermocontrol 300 | Heater | 300 W | Visual inspection, Heater test, Heater cleaning |
 | <img src="equipment/categories/circulation_pump/thumb.webp" width="48" alt=""> | Jebao | SLW / MLW / SCP / SOW | Circulation pump |  | Pump cleaning, Clean magnet holder and mount, Descale pump, Replace wear parts kit |
 |  | Jebao | DCP / MDP | Return pump |  | Clean suction strainer, Pump cleaning, Descale pump, Replace wear parts kit |
 | <img src="equipment/categories/circulation_pump/thumb.webp" width="48" alt=""> | Tunze | Turbelle nanostream | Circulation pump |  | Pump cleaning, Clean magnet holder and mount, Descale pump, Replace wear parts kit |
