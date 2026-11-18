@@ -29,6 +29,7 @@ from custom_components.catalog_demo import catalog_runtime as rt
 DOMAIN = "catalog_demo"
 UPDATE = "update.demo_equipment_catalog"
 SWITCH = "switch.demo_equipment_catalog_automatic_update"
+BUTTON = "button.demo_equipment_catalog_update_now"
 
 
 @pytest.fixture(autouse=True)
@@ -753,3 +754,73 @@ async def test_maintenance_command_follows_equipment(
     )
     tasks = (await client.receive_json())["result"]["tasks"]
     assert [t["task"] for t in tasks] == ["clean"]
+
+
+async def press(hass: HomeAssistant, entity_id: str = BUTTON) -> None:
+    await hass.services.async_call(
+        "button", "press", {"entity_id": entity_id}, blocking=True
+    )
+    await hass.async_block_till_done(wait_background_tasks=True)
+
+
+async def test_update_now_button(hass, aioclient_mock, release, catalog_root, tmp_path):
+    """Installs at once, even with the automatic update switch off."""
+    await rt.Store(hass, 1, f"{DOMAIN}.catalog").async_save({"auto_update": False})
+    serve(aioclient_mock, release)
+    await setup_entry(hass)
+    assert hass.states.get(BUTTON) is not None
+    assert hass.states.get(UPDATE).attributes["installed_version"] == rt.NOT_INSTALLED
+
+    await press(hass)
+    assert hass.states.get(UPDATE).attributes["installed_version"] == "2026.11.0"
+
+    # Nothing newer: checks again, installs nothing
+    aioclient_mock.clear_requests()
+    serve(aioclient_mock, release)
+    await press(hass)
+    assert [str(c[1]) for c in aioclient_mock.mock_calls] == [release.manifest_url]
+
+    # A newer release, still with the switch off
+    (catalog_root / "equipment/items/eheim/image.webp").write_bytes(b"RIFFnew")
+    second = build_release(
+        catalog_root, tmp_path / "d2", "equipment", "2026.11.1", release.manifest
+    )
+    serve(aioclient_mock, second)
+    await press(hass)
+    assert hass.states.get(UPDATE).attributes["installed_version"] == "2026.11.1"
+    assert hass.states.get(SWITCH).state == "off"
+
+
+async def test_update_now_button_errors(hass, aioclient_mock, catalog_root, tmp_path):
+    aioclient_mock.get(
+        "https://github.com/Elwinmage/reeftech-catalog/releases/download/"
+        "equipment-latest/manifest.json",
+        status=500,
+    )
+    await setup_entry(hass)
+    with pytest.raises(HomeAssistantError) as err:
+        await press(hass)
+    assert err.value.translation_key == "catalog_check_failed"
+
+    # Too new for the integration: said, not installed
+    release = build_release(
+        catalog_root, tmp_path / "d", "equipment", "2026.11.0", catalog_demo="9.0.0"
+    )
+    serve(aioclient_mock, release)
+    with pytest.raises(HomeAssistantError) as err:
+        await press(hass)
+    assert err.value.translation_key == "catalog_incompatible"
+
+
+async def test_one_button_for_every_section(
+    hass, aioclient_mock, release, second_release, two_sections
+):
+    await rt.Store(hass, 1, f"{DOMAIN}.catalog").async_save({"auto_update": False})
+    serve_both(aioclient_mock, release, second_release)
+    await setup_entry(hass)
+    assert hass.states.async_entity_ids("button") == ["button.demo_catalog_update_now"]
+    await press(hass, "button.demo_catalog_update_now")
+    assert hass.states.get(FIRST_UPDATE).attributes["installed_version"] == "2026.11.0"
+    assert hass.states.get(SECOND_UPDATE).attributes["installed_version"] == (
+        "2026.11.1"
+    )

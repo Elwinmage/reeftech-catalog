@@ -31,7 +31,8 @@ side (or with `--base`), writes into `custom_components/<domain>/`:
   (no Home Assistant dependency);
 - `catalog_runtime.py`: the Home Assistant side (shared pack of the section,
   updater shared by all the config entries of the domain, update entity,
-  automatic update switch, static paths, websocket commands);
+  automatic update switch, "update now" button, static paths, websocket
+  commands);
 - `catalog_builtin/`: a snapshot of the section, filtered by scopes, used
   before the first download and offline.
 
@@ -64,7 +65,7 @@ async def async_unload_entry(hass, entry):
 ```
 
 ```python
-# update.py (and the same in switch.py with "switch")
+# update.py (and the same in switch.py with "switch", button.py with "button")
 from .catalog_runtime import catalog_entities
 
 
@@ -79,12 +80,19 @@ it). Messages to add to `strings.json` and the translations:
 "exceptions": {
   "catalog_unknown": { "message": "The catalog has not been checked yet." },
   "catalog_incompatible": { "message": "Catalog {version} needs version {minimum} of the integration or newer." },
-  "catalog_install_failed": { "message": "Catalog update failed: {error}" }
+  "catalog_install_failed": { "message": "Catalog update failed: {error}" },
+  "catalog_check_failed": { "message": "Catalog check failed: {error}" }
 },
 "entity": {
-  "switch": { "catalog_auto_update": { "name": "Automatic update" } }
+  "switch": { "catalog_auto_update": { "name": "Automatic update" } },
+  "button": { "catalog_update_now": { "name": "Update now" } }
 }
 ```
+
+The *Update now* button checks every section of the domain and installs the
+newer compatible releases at once, even with the automatic update switch off.
+It is only created when the integration forwards the `button` platform to the
+entry hosting the catalog.
 
 ### Several sections
 
@@ -105,8 +113,8 @@ PARAMETERS = CatalogSpec(DOMAIN, "parameters", "Parameters", by_section=True)
   `/<domain>_catalog_<section>/...` (`sync_client.py` writes the snapshots with
   that name, see its `Reads`).
 - **One device** for the domain, named after the first section (`device_title`
-  when given), with one `update` entity per section and **one** automatic update
-  switch, which applies to every section. `catalog_entities` returns them for
+  when given), with one `update` entity per section, **one** automatic update
+  switch and **one** *Update now* button, which apply to every section. `catalog_entities` returns them for
   the entry hosting the catalog.
 - **Websocket**: the commands take an optional `section`; without it the first
   section answers, so a card that reads a single section need not name it.
@@ -132,9 +140,9 @@ PARAMETERS = CatalogSpec(DOMAIN, "parameters", "Parameters", by_section=True)
    `min_integration[<domain>]` is newer than its version: the release is
    installed for the others, and this one keeps its previous pack (see
    below).
-6. One config entry hosts the device *<title>* with `update.<title>` and
+6. One config entry hosts the device *<title>* with `update.<title>`,
    `switch.<title>_automatic_update` (on by default, kept in
-   `.storage/<domain>.catalog`). When that entry is removed while others stay,
+   `.storage/<domain>.catalog`) and `button.<title>_update_now`. When that entry is removed while others stay,
    the next one is reloaded and hosts them. An integration with several
    entries of the same kind (redsea: one per doser) gives the catalog an
    entry of its own instead, created by a config flow step, so that its

@@ -19,7 +19,7 @@ SPEC_SECOND = CatalogSpec(
 )
 #: Sections read by the demo; a test adds the second one
 SPECS = [SPEC]
-PLATFORMS = [Platform.SWITCH, Platform.UPDATE]
+PLATFORMS = [Platform.BUTTON, Platform.SWITCH, Platform.UPDATE]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

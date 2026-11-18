@@ -8,12 +8,20 @@
     },
     "catalog_install_failed": {
       "message": "Catalog update failed: {error}"
+    },
+    "catalog_check_failed": {
+      "message": "Catalog check failed: {error}"
     }
   },
   "entity": {
     "switch": {
       "catalog_auto_update": {
         "name": "Automatic update"
+      }
+    },
+    "button": {
+      "catalog_update_now": {
+        "name": "Update now"
       }
     }
   }

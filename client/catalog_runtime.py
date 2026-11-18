@@ -42,9 +42,10 @@ A tool that is not a reader of the catalog (an editor) takes the shared pack wit
 `async_acquire_pack` and gives it back with `async_release_pack`.
 
 Translation keys expected in the integration: the exceptions
-`catalog_unknown`, `catalog_incompatible` (placeholders `version`, `minimum`)
-and `catalog_install_failed` (placeholder `error`), and the entity name
-`entity.switch.catalog_auto_update`.
+`catalog_unknown`, `catalog_incompatible` (placeholders `version`, `minimum`),
+`catalog_install_failed` and `catalog_check_failed` (placeholder `error`), and
+the entity names `entity.switch.catalog_auto_update` and
+`entity.button.catalog_update_now` (the button needs the button platform).
 """
 
 from __future__ import annotations
@@ -58,6 +59,7 @@ from datetime import timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from homeassistant.components.button import ButtonEntity
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.components.update import UpdateEntity, UpdateEntityFeature
 from homeassistant.components.websocket_api import async_register_command
@@ -974,7 +976,7 @@ def catalog_entities(
     """Entities of the catalog for a platform, only for the hosting entry.
 
     One update entity per section the entry hosts; one automatic update switch
-    for the domain, with the first section.
+    and one "update now" button for the domain, with the first section.
     """
     hosted = [
         updater
@@ -983,8 +985,12 @@ def catalog_entities(
     ]
     if platform == "update":
         return [CatalogUpdateEntity(updater) for updater in hosted]
-    if platform == "switch" and hosted and hosted[0] is get_updater(hass, domain):
+    if not hosted or hosted[0] is not get_updater(hass, domain):
+        return []
+    if platform == "switch":
         return [CatalogAutoUpdateSwitch(hosted[0])]
+    if platform == "button":
+        return [CatalogUpdateNowButton(hosted[0])]
     return []
 
 
@@ -1103,3 +1109,38 @@ class CatalogAutoUpdateSwitch(_CatalogEntity, SwitchEntity):
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn automatic installs off."""
         await self._updater.async_set_auto_update(False)
+
+
+class CatalogUpdateNowButton(_CatalogEntity, ButtonEntity):
+    """Check every section of the domain now and install what is newer.
+
+    Works whatever the automatic update switch says: the way to take a release
+    at once without waiting for the next periodic check.
+    """
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_translation_key = "catalog_update_now"
+    _attr_icon = "mdi:update"
+
+    def __init__(self, updater: CatalogUpdater) -> None:
+        """Bind to the first section of the domain."""
+        self._attr_unique_id = f"catalog_{updater.spec.section}_update_now"
+        super().__init__(updater)
+
+    async def async_press(self) -> None:
+        """Check, then install the sections with a newer compatible release.
+
+        Raises HomeAssistantError when the check fails (offline, GitHub down)
+        or when a release cannot be installed (too new, broken download).
+        """
+        domain = self._updater.spec.domain
+        for updater in get_updaters(self.hass, domain):
+            await updater.async_check()
+            if updater.last_error is not None:
+                raise HomeAssistantError(
+                    translation_domain=domain,
+                    translation_key="catalog_check_failed",
+                    translation_placeholders={"error": updater.last_error},
+                )
+            if updater.update_available:
+                await updater.async_install()
