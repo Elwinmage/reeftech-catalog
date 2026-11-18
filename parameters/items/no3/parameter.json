@@ -16,5 +16,10 @@
     "high": 10,
     "optimal": 5
   },
+  "regulation": {
+    "tolerance": 1,
+    "max_rate": 2,
+    "step": 0.1
+  },
   "source": "Red Sea Reef Care reference program"
 }

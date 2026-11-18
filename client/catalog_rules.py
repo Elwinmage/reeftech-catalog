@@ -75,6 +75,7 @@ READING_BOUNDS = {
     ("po4", "ppm"): (0, 10),
     ("i", "ppb"): (0, 1000),
     ("fe", "ppm"): (0, 2),
+    ("fe", "ppb"): (0, 2000),
 }
 # Brine concentration bounds (g/L); natural sea water is about 35 g/L and
 # salt stops dissolving around 360 g/L.
@@ -391,6 +392,15 @@ def _check_parameter(report, where, entry_id, data, files, ctx) -> None:
         if "source" not in data:
             report.warn(where, "reference band without a source")
 
+    regulation = data.get("regulation")
+    if regulation:
+        if regulation["step"] > regulation["tolerance"]:
+            report.error(where, "regulation step must not exceed the tolerance")
+        if regulation["max_rate"] < regulation["tolerance"]:
+            report.error(where, "regulation max_rate must be at least the tolerance")
+        if "optimal" not in (band or {}):
+            report.error(where, "regulation needs range.optimal, the default target")
+
 
 def _check_reading(report, where, key, values) -> None:
     """Every value of a test is a plausible reading of its parameter."""
@@ -460,16 +470,15 @@ def _check_water_test(report, where, entry_id, data, files, ctx) -> None:
                 where, f"{data['brand']} {data['name']} is already {other_id!r}"
             )
             break
-    seen = set()
+    # The schema keeps one test per entry
     for index, test in enumerate(data["tests"]):
-        if test["parameter"] in seen:
-            report.error(where, f"parameter {test['parameter']!r} listed twice")
-        seen.add(test["parameter"])
         _check_test(report, f"{where} tests[{index}]", test, ctx.parameters)
     if data["verified"] and "source" not in data:
         report.error(where, "verified conversion data needs a source")
     if not data["verified"]:
-        report.warn(where, "not verified: not used for automatic dose proposals")
+        report.warn(
+            where, "not verified: the card warns that the table was not checked"
+        )
     if not _has_image(files):
         report.warn(where, "no picture, the generic test will be shown")
 

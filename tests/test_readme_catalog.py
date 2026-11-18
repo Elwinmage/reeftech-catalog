@@ -153,11 +153,10 @@ def test_render(root: Path) -> None:
     # Models: the category visual by default, own tasks then inherited ones
     assert (
         '| <img src="equipment/categories/heater/thumb.webp" width="48" alt=""> '
-        "| Eheim | 200 \\| pro | Heater | 200 W | Clean, gone, Yearly |"
+        "| 200 \\| pro | 200 W | Clean, gone, Yearly |"
     ) in lines
     assert (
-        '| <img src="equipment/items/own/image.png" width="48" alt=""> '
-        "| Acme | X | missing |  |  |"
+        '| <img src="equipment/items/own/image.png" width="48" alt=""> | X |  |  |'
     ) in lines
     # Tasks and their schedules
     assert "| `clean` | Clean | 3 months (1-6) | mdi:broom |" in lines
@@ -166,27 +165,41 @@ def test_render(root: Path) -> None:
     assert "| `spring` | Spring | yearly, 01/04 |  |" in lines
     assert "| `odd` | Odd | x |  |" in lines
     assert "| `bare` | bare |  |  |" in lines
-    # Supplements: by brand, then name
-    assert "### Supplements (4, 3 brands)" in lines
-    after = lines[lines.index("### Supplements (4, 3 brands)") :]
-    supplements = [line for line in after if "| Acme |" in line or "| DIY |" in line]
+    # Supplements: folded by kind, then brand, then name
+    assert (
+        "<summary><b>Supplements</b> (4, 3 brands, by kind and brand)</summary>"
+        in lines
+    )
+    assert "<summary>Acme (1)</summary>" in lines
+    after = lines[
+        lines.index(
+            "<summary><b>Supplements</b> (4, 3 brands, by kind and brand)</summary>"
+        ) :
+    ]
+    supplements = [
+        line
+        for line in after
+        if "| Food |" in line or "| Zinc |" in line or "| Brine |" in line
+    ]
     assert supplements == [
-        "|  | Acme | Food | food |  |",
-        "|  | Acme | Zinc | exotic | +0.01 ppm zn (unverified) |",
-        "|  | DIY | Brine | brine | salinity (200 g/L) |",
+        "|  | Food |  |",
+        "|  | Brine | salinity (200 g/L) |",
+        "|  | Zinc | +0.01 ppm zn (unverified) |",
     ]
     assert (
         '| <img src="supplements/items/kh/image.webp" width="48" alt=""> '
-        "| Red Sea | KH | KH | +0.1 dKH KH |"
+        "| KH | +0.1 dKH KH |"
     ) in lines
 
 
 def test_water_tests_render(root: Path) -> None:
     lines = rc.render(root).splitlines()
-    assert "### Water tests (1, 1 brands)" in lines
+    assert (
+        "<summary><b>Water tests</b> (1, 1 brands, by parameter and brand)</summary>"
+    ) in lines
     assert (
         '| <img src="water_tests/items/red-sea-kit/image.webp" width="48" alt=""> '
-        "| Red Sea | Kit | KH (titration), NO3 (direct) |"
+        "| Kit | KH (titration), NO3 (direct) |"
     ) in lines
 
 
@@ -218,13 +231,18 @@ def test_parameters_render(tmp_path: Path) -> None:
     )
     block = rc.render(tmp_path)
     lines = block.splitlines()
-    assert "### Water parameters (3)" in lines
+    title = "<summary><b>Water parameters</b> (3, by category)</summary>"
+    assert title in lines
     # physical before alkalinity before trace, each with its band rendering
-    after = lines[lines.index("### Water parameters (3)") :]
-    rows = [line for line in after if line.startswith("| ")][1:]  # drop header
-    assert rows[0] == "| T | Temperature | physical | °C | target 25.5 |"
-    assert rows[1] == "| KH | Alkalinity | alkalinity | dKH | 7-8.5 (8) |"
-    assert rows[2] == "| Fe | Iron | trace element | ppb |  |"
+    after = lines[lines.index(title) :]
+    rows = [
+        line
+        for line in after
+        if line.startswith("| ") and not line.startswith("| Symbol")
+    ]
+    assert rows[0] == "| T | Temperature | °C | target 25.5 |"
+    assert rows[1] == "| KH | Alkalinity | dKH | 7-8.5 (8) |"
+    assert rows[2] == "| Fe | Iron | ppb |  |"
 
 
 def test_schedule_without_one() -> None:
@@ -233,8 +251,11 @@ def test_schedule_without_one() -> None:
 
 def test_empty_catalog(tmp_path: Path) -> None:
     block = rc.render(tmp_path)
-    assert "### Equipment categories (0)" in block
-    assert "### Supplements (0, 0 brands)" in block
+    assert "<summary><b>Equipment categories</b> (0)</summary>" in block
+    assert (
+        "<summary><b>Supplements</b> (0, 0 brands, by kind and brand)</summary>"
+        in block
+    )
 
 
 def test_update_markers() -> None:
@@ -262,3 +283,23 @@ def test_main_broken_markers(root: Path, capsys) -> None:
     (root / "README.md").write_text(rc.END + rc.BEGIN, encoding="utf-8")
     assert rc.main(["--root", str(root)]) == 1
     assert "broken" in capsys.readouterr().err
+
+
+def test_every_list_is_folded_and_closed(root: Path) -> None:
+    block = rc.render(root)
+    assert block.count("<details>") == block.count("</details>")
+    # Collapsed by default: no block is ever opened
+    assert "<details open" not in block
+    # The six lists are the top level
+    tops = [
+        line
+        for line in block.splitlines()
+        if line.startswith("<summary><b>") and "(" in line
+    ]
+    assert any("Equipment models" in line for line in tops)
+
+
+def test_brine_concentration_range() -> None:
+    # A concentration the user may set: its default is shown
+    data = {"kind": "brine", "concentration_g_l": {"default": 250, "min": 100}}
+    assert rc._effects(data) == "salinity (250 g/L)"

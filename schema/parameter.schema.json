@@ -90,6 +90,29 @@
         }
       }
     },
+    "regulation": {
+      "description": "How ReefDose regulates this parameter, in its display unit. A parameter without this block is not offered for regulation. The default target is the optimal value of the reference band.",
+      "type": "object",
+      "required": ["tolerance", "max_rate", "step"],
+      "additionalProperties": false,
+      "properties": {
+        "tolerance": {
+          "description": "Gap to the target under which nothing is corrected.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "max_rate": {
+          "description": "Largest correction asked for per day, whatever the gap.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "step": {
+          "description": "Smallest step a measurement or a target can take.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      }
+    },
     "source": {
       "description": "Where the reference band comes from (program, label, URL).",
       "type": "string",

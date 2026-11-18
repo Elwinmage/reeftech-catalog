@@ -4,3 +4,5 @@ __pycache__/
 .coverage
 dist/
 prev/
+# Coverage reports (pre-commit hook)
+reports/

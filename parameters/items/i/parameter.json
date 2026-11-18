@@ -16,5 +16,10 @@
     "high": 80,
     "optimal": 60
   },
+  "regulation": {
+    "tolerance": 10,
+    "max_rate": 10,
+    "step": 1
+  },
   "source": "Common reef-keeping range"
 }

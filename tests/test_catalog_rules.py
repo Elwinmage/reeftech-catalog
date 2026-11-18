@@ -227,10 +227,12 @@ def test_valid_water_test(validators, ctx):
 def test_water_test_rules(validators, ctx):
     data = water_test()
     data["verified"] = False
-    data["tests"].append(dict(data["tests"][0]))
     found = draft(validators, ctx, "water_test", "rs", data)
-    assert any("listed twice" in e for e in found.errors)
     assert any("not verified" in w for w in found.warnings)
+    # One test per entry: a kit of several tests is several entries
+    data["tests"].append(dict(data["tests"][0]))
+    assert draft(validators, ctx, "water_test", "rs", data).errors
+    del data["tests"][1]
     del data["source"]
     data["verified"] = True
     assert any(
@@ -320,3 +322,30 @@ def test_icon_sets(validators, ctx):
     for icon, ok in (("mdi:pump", True), ("redsea:gyre-off", True), ("fa:pump", False)):
         errors = draft(validators, ctx, "task", "t", {**task, "icon": icon}).errors
         assert (errors == []) is ok, (icon, errors)
+
+
+def test_parameter_regulation(validators, ctx):
+    def errors(**regulation):
+        data = {
+            "name": {"en": "Zinc"},
+            "symbol": "Zn",
+            "category": "trace",
+            "unit": "ppm",
+            "range": {"optimal": 1},
+            "regulation": {"tolerance": 0.2, "max_rate": 0.5, "step": 0.1} | regulation,
+        }
+        return draft(validators, ctx, "parameter", "zn", data).errors
+
+    assert errors() == []
+    assert any("step must not exceed" in e for e in errors(step=0.5))
+    assert any("max_rate must be at least" in e for e in errors(max_rate=0.1))
+    # The default target is the optimal value of the band
+    no_target = {
+        "name": {"en": "Zinc"},
+        "symbol": "Zn",
+        "category": "trace",
+        "unit": "ppm",
+        "regulation": {"tolerance": 0.2, "max_rate": 0.5, "step": 0.1},
+    }
+    found = draft(validators, ctx, "parameter", "zn", no_target).errors
+    assert any("needs range.optimal" in e for e in found)

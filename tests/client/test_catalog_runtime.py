@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import shutil
+from dataclasses import replace
 from datetime import timedelta
 from pathlib import Path
 
@@ -571,3 +572,184 @@ async def test_acquire_failure_leaves_nothing_behind(hass, monkeypatch):
     with pytest.raises(OSError):
         await rt.async_acquire_pack(hass, "equipment", "editor")
     assert rt.get_shared_pack(hass, "equipment") is None
+
+
+# -- a domain reading two sections ----------------------------------------------
+
+SECOND = "supplements"
+SECOND_UPDATE = "update.demo_catalog_demo_supplements_catalog"
+FIRST_UPDATE = "update.demo_catalog_demo_equipment_catalog"
+DEVICE_SWITCH = "switch.demo_catalog_automatic_update"
+
+
+@pytest.fixture
+def two_sections(monkeypatch):
+    from custom_components import catalog_demo
+
+    first = replace(SPEC, device_title="Demo catalog")
+    monkeypatch.setattr(catalog_demo, "SPECS", [first, catalog_demo.SPEC_SECOND])
+
+
+@pytest.fixture
+def second_release(catalog_root, tmp_path) -> Release:
+    return build_release(catalog_root, tmp_path / "dist2", SECOND, "2026.11.1")
+
+
+def serve_both(aioclient_mock, release: Release, second: Release) -> None:
+    serve(aioclient_mock, release)
+    for url, body in second.files.items():
+        aioclient_mock.get(url, content=body)
+    aioclient_mock.get(second.manifest_url, text=json.dumps(second.manifest))
+
+
+async def test_two_sections_one_device(
+    hass, aioclient_mock, release, second_release, two_sections, hass_ws_client
+):
+    serve_both(aioclient_mock, release, second_release)
+    entry = await setup_entry(hass)
+
+    # One update entity per section on one device, one switch for the domain
+    assert hass.states.get(FIRST_UPDATE).attributes["installed_version"] == "2026.11.0"
+    assert hass.states.get(SECOND_UPDATE).attributes["installed_version"] == (
+        "2026.11.1"
+    )
+    assert hass.states.get(DEVICE_SWITCH).state == "on"
+    switches = [s for s in hass.states.async_entity_ids("switch")]
+    assert switches == [DEVICE_SWITCH]
+    from homeassistant.helpers import device_registry as dr
+
+    # Through the helper: reading `devices` as a mapping is deprecated
+    devices = dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)
+    assert [d.name for d in devices] == ["Demo catalog"]
+    assert [
+        rt.get_updater(hass, DOMAIN, s).spec.section for s in ("equipment", SECOND)
+    ] == [
+        "equipment",
+        SECOND,
+    ]
+    assert [u.spec.section for u in rt.get_updaters(hass, DOMAIN)] == [
+        "equipment",
+        SECOND,
+    ]
+    # Without a section: the first one
+    assert rt.get_updater(hass, DOMAIN) is rt.get_updater(hass, DOMAIN, "equipment")
+    assert rt.get_updater(hass, DOMAIN, "parameters") is None
+
+    client = await hass_ws_client(hass)
+    await client.send_json_auto_id({"type": f"{DOMAIN}/catalog"})
+    result = (await client.receive_json())["result"]
+    assert result["section"] == "equipment"
+    await client.send_json_auto_id({"type": f"{DOMAIN}/catalog", "section": SECOND})
+    result = (await client.receive_json())["result"]
+    assert result["section"] == SECOND and result["version"] == "2026.11.1"
+    items = result["data"]["items"]
+    assert set(items) == {"kh", "builtin-kh"}
+    assert items["builtin-kh"]["source"] == "builtin"
+    assert items["kh"]["source"] == "pack"
+    await client.send_json_auto_id(
+        {"type": f"{DOMAIN}/catalog", "section": "parameters"}
+    )
+    answer = await client.receive_json()
+    assert answer["error"]["code"] == "not_loaded"
+    assert "parameters" in answer["error"]["message"]
+    await client.send_json_auto_id(
+        {"type": f"{DOMAIN}/catalog/subscribe", "section": SECOND}
+    )
+    assert (await client.receive_json())["success"]
+    assert (await client.receive_json())["event"]["version"] == "2026.11.1"
+
+
+async def test_two_sections_static_files(
+    hass, aioclient_mock, release, second_release, two_sections, hass_client
+):
+    serve_both(aioclient_mock, release, second_release)
+    await setup_entry(hass)
+    http = await hass_client()
+    # The first section keeps the plain URL, the second one carries its name
+    assert (
+        await http.get(f"/{DOMAIN}_catalog/builtin/tasks/visual_inspection.json")
+    ).status == 200
+    response = await http.get(
+        f"/{DOMAIN}_catalog_{SECOND}/builtin/items/builtin-kh/supplement.json"
+    )
+    assert response.status == 200
+    assert Path(hass.config.path(DOMAIN, f"catalog_user_{SECOND}")).is_dir()
+    assert Path(hass.config.path(DOMAIN, "catalog_user")).is_dir()
+
+
+async def test_one_switch_for_every_section(
+    hass, aioclient_mock, release, second_release, two_sections
+):
+    serve_both(aioclient_mock, release, second_release)
+    await setup_entry(hass)
+    first, second = rt.get_updaters(hass, DOMAIN)
+    await hass.services.async_call(
+        "switch", "turn_off", {"entity_id": DEVICE_SWITCH}, blocking=True
+    )
+    assert not first.auto_update and not second.auto_update
+    assert not first.shared.wants_auto and not second.shared.wants_auto
+    assert hass.states.get(FIRST_UPDATE).attributes["auto_update"] is False
+    assert hass.states.get(SECOND_UPDATE).attributes["auto_update"] is False
+
+    calls = []
+    for updater in (first, second):
+        updater.async_check = _recorder(calls, updater.spec.section)
+    await hass.services.async_call(
+        "switch", "turn_on", {"entity_id": DEVICE_SWITCH}, blocking=True
+    )
+    assert calls == ["equipment", SECOND]
+    assert first.auto_update and second.auto_update
+
+
+def _recorder(calls: list, name: str):
+    async def check() -> None:
+        calls.append(name)
+
+    return check
+
+
+async def test_section_signals(
+    hass, aioclient_mock, release, second_release, two_sections
+):
+    serve_both(aioclient_mock, release, second_release)
+    await setup_entry(hass)
+    domain_calls, second_calls = [], []
+    async_dispatcher_connect(
+        hass, rt.signal_catalog_changed(DOMAIN), lambda: domain_calls.append(None)
+    )
+    async_dispatcher_connect(
+        hass,
+        rt.signal_catalog_changed(DOMAIN, SECOND),
+        lambda: second_calls.append(None),
+    )
+    rt.get_updater(hass, DOMAIN, SECOND).notify()
+    rt.get_updater(hass, DOMAIN, "equipment").notify()
+    await hass.async_block_till_done()
+    assert (len(domain_calls), len(second_calls)) == (2, 1)
+
+    # Unloading tells both readers; each section goes on its own
+    entry = hass.config_entries.async_entries(DOMAIN)[0]
+    await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert rt.get_updaters(hass, DOMAIN) == []
+    assert len(second_calls) == 2
+
+
+async def test_maintenance_command_follows_equipment(
+    hass, aioclient_mock, release, second_release, monkeypatch, hass_ws_client
+):
+    """The equipment section may come after another one."""
+    from custom_components import catalog_demo
+
+    monkeypatch.setattr(catalog_demo, "SPECS", [catalog_demo.SPEC_SECOND, SPEC])
+    serve_both(aioclient_mock, release, second_release)
+    await setup_entry(hass)
+    client = await hass_ws_client(hass)
+    # No section: the first one set up, here the supplements
+    await client.send_json_auto_id({"type": f"{DOMAIN}/catalog"})
+    assert (await client.receive_json())["result"]["section"] == SECOND
+    await client.send_json_auto_id(
+        {"type": f"{DOMAIN}/catalog/maintenance", "item_id": "eheim"}
+    )
+    tasks = (await client.receive_json())["result"]["tasks"]
+    assert [t["task"] for t in tasks] == ["clean"]

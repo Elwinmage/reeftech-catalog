@@ -60,6 +60,54 @@ def _cell(text: object) -> str:
     return str(text).replace("|", "\\|").replace("\n", " ").strip()
 
 
+def _details(summary: str, body: list[str]) -> list[str]:
+    """A block that folds: closed by default, its summary always shown.
+
+    Blank lines around the body keep the markdown (tables, nested blocks) working
+    inside the HTML element, on GitHub as elsewhere.
+    """
+    return ["<details>", f"<summary>{summary}</summary>", "", *body, "", "</details>"]
+
+
+def _table(header: list[str], rows: list[list[str]]) -> list[str]:
+    """A markdown table; the cells are expected to be safe already."""
+    return [
+        "| " + " | ".join(header) + " |",
+        "|" + "---|" * len(header),
+        *("| " + " | ".join(row) + " |" for row in rows),
+    ]
+
+
+def _grouped(
+    rows: list[tuple[str, str, str, list[str]]],
+    header: list[str],
+) -> list[str]:
+    """Rows folded by type, then by brand: up to three levels with the list.
+
+    @param rows: (type label, brand, sort key of the row, cells), in the order the
+        types are listed in
+    @param header: the columns of the table of a brand
+    """
+    lines: list[str] = []
+    types = list(dict.fromkeys(kind for kind, _, _, _ in rows))
+    for kind in types:
+        of_type = [row for row in rows if row[0] == kind]
+        brands = sorted({brand for _, brand, _, _ in of_type}, key=str.lower)
+        body: list[str] = []
+        for brand in brands:
+            mine = sorted(
+                (row for row in of_type if row[1] == brand), key=lambda r: r[2].lower()
+            )
+            body += _details(
+                f"{_cell(brand)} ({len(mine)})",
+                _table(header, [row[3] for row in mine]),
+            )
+            body.append("")
+        lines += _details(f"<b>{_cell(kind)}</b> ({len(of_type)})", body[:-1])
+        lines.append("")
+    return lines[:-1]
+
+
 def _name(data: dict, fallback: str) -> str:
     """English name of a translated descriptor."""
     name = data.get("name")
@@ -124,49 +172,45 @@ def _task_names(refs: list, tasks: dict[str, dict]) -> str:
 
 
 def tasks_table(root: Path, tasks: dict[str, dict]) -> list[str]:
-    lines = [
-        f"### Maintenance tasks ({len(tasks)})",
-        "",
-        "| Id | Task | Schedule | Icon |",
-        "|---|---|---|---|",
+    rows = [
+        [
+            f"`{task_id}`",
+            _cell(_name(data, task_id)),
+            _cell(_schedule(data.get("schedule"))),
+            _cell(data.get("icon", "")),
+        ]
+        for task_id, data in tasks.items()
     ]
-    for task_id, data in tasks.items():
-        lines.append(
-            f"| `{task_id}` | {_cell(_name(data, task_id))} "
-            f"| {_cell(_schedule(data.get('schedule')))} "
-            f"| {_cell(data.get('icon', ''))} |"
-        )
-    return lines
+    return _details(
+        f"<b>Maintenance tasks</b> ({len(tasks)})",
+        _table(["Id", "Task", "Schedule", "Icon"], rows),
+    )
 
 
 def categories_table(root: Path, tasks: dict[str, dict]) -> list[str]:
     folders = _folders(root / "equipment" / "categories")
-    lines = [
-        f"### Equipment categories ({len(folders)})",
-        "",
-        "| | Id | Category | Scopes | Default tasks |",
-        "|---|---|---|---|---|",
-    ]
+    rows = []
     for folder in folders:
         data = read_json(folder / "category.json")
-        lines.append(
-            f"| {_visual(root, folder)} | `{folder.name}` "
-            f"| {_cell(_name(data, folder.name))} "
-            f"| {_cell(', '.join(data.get('scopes', [])))} "
-            f"| {_cell(_task_names(data.get('maintenance', []), tasks))} |"
+        rows.append(
+            [
+                _visual(root, folder),
+                f"`{folder.name}`",
+                _cell(_name(data, folder.name)),
+                _cell(", ".join(data.get("scopes", []))),
+                _cell(_task_names(data.get("maintenance", []), tasks)),
+            ]
         )
-    return lines
+    return _details(
+        f"<b>Equipment categories</b> ({len(folders)})",
+        _table(["", "Id", "Category", "Scopes", "Default tasks"], rows),
+    )
 
 
 def items_table(root: Path, tasks: dict[str, dict]) -> list[str]:
     folders = _folders(root / "equipment" / "items")
     categories = root / "equipment" / "categories"
-    lines = [
-        f"### Equipment models ({len(folders)})",
-        "",
-        "| | Brand | Model | Category | Power | Tasks |",
-        "|---|---|---|---|---|---|",
-    ]
+    rows: list[tuple[str, str, str, list[str]]] = []
     for folder in folders:
         data = read_json(folder / "item.json")
         category_id = str(data.get("category", ""))
@@ -183,18 +227,28 @@ def items_table(root: Path, tasks: dict[str, dict]) -> list[str]:
                 if isinstance(r, dict) and r.get("task") not in own
             ]
         power = f"{data['power_w']} W" if "power_w" in data else ""
-        lines.append(
-            f"| {visual} | {_cell(data.get('brand', ''))} "
-            f"| {_cell(data.get('model', ''))} "
-            f"| {_cell(_name(category, category_id))} | {power} "
-            f"| {_cell(_task_names(refs, tasks))} |"
+        model = str(data.get("model", ""))
+        rows.append(
+            (
+                _name(category, category_id),
+                str(data.get("brand", "")),
+                model,
+                [visual, _cell(model), power, _cell(_task_names(refs, tasks))],
+            )
         )
-    return lines
+    rows.sort(key=lambda r: r[0].lower())
+    return _details(
+        f"<b>Equipment models</b> ({len(folders)}, by category and brand)",
+        _grouped(rows, ["", "Model", "Power", "Tasks"]),
+    )
 
 
 def _effects(data: dict) -> str:
     if data.get("kind") == "brine" and "concentration_g_l" in data:
-        return f"salinity ({data['concentration_g_l']} g/L)"
+        concentration = data["concentration_g_l"]
+        if isinstance(concentration, dict):
+            concentration = concentration.get("default")
+        return f"salinity ({concentration} g/L)"
     parts = []
     for effect in data.get("effects", []):
         parameter = str(effect.get("parameter", ""))
@@ -258,45 +312,49 @@ def parameters_table(root: Path) -> list[str]:
             _name(e[1], e[0].name).lower(),
         )
     )
-    lines = [
-        f"### Water parameters ({len(entries)})",
-        "",
-        "| Symbol | Parameter | Category | Unit | Reef range |",
-        "|---|---|---|---|---|",
-    ]
-    for folder, data in entries:
-        category = str(data.get("category", ""))
-        unit = str(data.get("unit", ""))
-        lines.append(
-            f"| {_cell(data.get('symbol', ''))} "
-            f"| {_cell(_name(data, folder.name))} "
-            f"| {CATEGORIES.get(category, category)} "
-            f"| {UNITS.get(unit, unit)} | {_cell(_band(data))} |"
+    body: list[str] = []
+    categories = list(dict.fromkeys(str(d.get("category", "")) for _, d in entries))
+    for category in categories:
+        mine = [(f, d) for f, d in entries if str(d.get("category", "")) == category]
+        rows = [
+            [
+                _cell(data.get("symbol", "")),
+                _cell(_name(data, folder.name)),
+                UNITS.get(str(data.get("unit", "")), str(data.get("unit", ""))),
+                _cell(_band(data)),
+            ]
+            for folder, data in mine
+        ]
+        body += _details(
+            f"<b>{CATEGORIES.get(category, category)}</b> ({len(mine)})",
+            _table(["Symbol", "Parameter", "Unit", "Reef range"], rows),
         )
-    return lines
+        body.append("")
+    return _details(f"<b>Water parameters</b> ({len(entries)}, by category)", body[:-1])
 
 
 def supplements_table(root: Path) -> list[str]:
     folders = _folders(root / "supplements" / "items")
     entries = [(folder, read_json(folder / "supplement.json")) for folder in folders]
-    entries.sort(
-        key=lambda e: (str(e[1].get("brand", "")).lower(), _name(e[1], "").lower())
-    )
-    brands = sorted({str(data.get("brand", "")) for _, data in entries})
-    lines = [
-        f"### Supplements ({len(entries)}, {len(brands)} brands)",
-        "",
-        "| | Brand | Supplement | Kind | 1 mL in 100 L |",
-        "|---|---|---|---|---|",
-    ]
+    brands = {str(data.get("brand", "")) for _, data in entries}
+    rows: list[tuple[str, str, str, list[str]]] = []
     for folder, data in entries:
         kind = str(data.get("kind", ""))
-        lines.append(
-            f"| {_visual(root, folder)} | {_cell(data.get('brand', ''))} "
-            f"| {_cell(_name(data, folder.name))} | {KINDS.get(kind, kind)} "
-            f"| {_cell(_effects(data))} |"
+        name = _name(data, folder.name)
+        rows.append(
+            (
+                KINDS.get(kind, kind),
+                str(data.get("brand", "")),
+                name,
+                [_visual(root, folder), _cell(name), _cell(_effects(data))],
+            )
         )
-    return lines
+    order = list(KINDS.values())
+    rows.sort(key=lambda r: order.index(r[0]) if r[0] in order else len(order))
+    return _details(
+        f"<b>Supplements</b> ({len(entries)}, {len(brands)} brands, by kind and brand)",
+        _grouped(rows, ["", "Supplement", "1 mL in 100 L"]),
+    )
 
 
 def _methods(data: dict) -> str:
@@ -311,22 +369,27 @@ def _methods(data: dict) -> str:
 def water_tests_table(root: Path) -> list[str]:
     folders = _folders(root / "water_tests" / "items")
     entries = [(folder, read_json(folder / "water_test.json")) for folder in folders]
-    entries.sort(
-        key=lambda e: (str(e[1].get("brand", "")).lower(), _name(e[1], "").lower())
-    )
-    brands = sorted({str(data.get("brand", "")) for _, data in entries})
-    lines = [
-        f"### Water tests ({len(entries)}, {len(brands)} brands)",
-        "",
-        "| | Brand | Test | Parameters |",
-        "|---|---|---|---|",
-    ]
+    brands = {str(data.get("brand", "")) for _, data in entries}
+    rows: list[tuple[str, str, str, list[str]]] = []
     for folder, data in entries:
-        lines.append(
-            f"| {_visual(root, folder)} | {_cell(data.get('brand', ''))} "
-            f"| {_cell(_name(data, folder.name))} | {_cell(_methods(data))} |"
+        tests = data.get("tests") or [{}]
+        parameter = str(tests[0].get("parameter", ""))
+        name = _name(data, folder.name)
+        rows.append(
+            (
+                PARAMETERS.get(parameter, parameter),
+                str(data.get("brand", "")),
+                name,
+                [_visual(root, folder), _cell(name), _cell(_methods(data))],
+            )
         )
-    return lines
+    order = list(PARAMETERS.values())
+    rows.sort(key=lambda r: order.index(r[0]) if r[0] in order else len(order))
+    return _details(
+        f"<b>Water tests</b> ({len(entries)}, {len(brands)} brands, "
+        "by parameter and brand)",
+        _grouped(rows, ["", "Test", "Parameters"]),
+    )
 
 
 def render(root: Path) -> str:

@@ -12,14 +12,15 @@ copied into each integration by `scripts/sync_client.py`.
 | `maintenance_hub` | equipment | everything |
 | `redsea` | supplements | everything |
 | `redsea`, `reeftank` | water_tests | everything (ReefDose turns a titration amount into a value with `catalog_conversion.py`) |
+| `redsea`, `reeftank` | parameters | everything (ReefDose offers the parameters with a `regulation` block; the cards take their units and bands from it) |
 
 Both maintenance integrations may be installed together; each keeps its own
 copy so that neither depends on the other.
 
 The downloaded pack is shared (see [Shared pack](#shared-pack)), so it is keyed
-by section. Limit that remains: a `CatalogUpdater` is registered per domain, so a
-domain reading two sections (redsea: supplements and water tests) still needs
-the updater registry of `catalog_runtime` keyed by (domain, section).
+by section, and so are the updaters: a domain reading several sections (redsea:
+supplements, water tests, parameters) calls `async_setup_catalog` once per
+section (see [Several sections](#several-sections)).
 
 ## The client
 
@@ -84,6 +85,35 @@ it). Messages to add to `strings.json` and the translations:
   "switch": { "catalog_auto_update": { "name": "Automatic update" } }
 }
 ```
+
+### Several sections
+
+A domain reading more than one section gives one `CatalogSpec` per section, and
+calls `async_setup_catalog` / `async_unload_catalog` for each, with the same
+config entry:
+
+```python
+SUPPLEMENTS = CatalogSpec(DOMAIN, "supplements", "Supplements", device_title="ReefBeat catalog")
+WATER_TESTS = CatalogSpec(DOMAIN, "water_tests", "Water tests", by_section=True)
+PARAMETERS = CatalogSpec(DOMAIN, "parameters", "Parameters", by_section=True)
+```
+
+- The **first** section set up keeps the plain folders and URLs (nothing moves
+  for an integration that already reads one); the others pass
+  `by_section=True`, which adds the section to them: `catalog_<section>/`,
+  `catalog_user_<section>/`, `catalog_builtin_<section>/` and
+  `/<domain>_catalog_<section>/...` (`sync_client.py` writes the snapshots with
+  that name, see its `Reads`).
+- **One device** for the domain, named after the first section (`device_title`
+  when given), with one `update` entity per section and **one** automatic update
+  switch, which applies to every section. `catalog_entities` returns them for
+  the entry hosting the catalog.
+- **Websocket**: the commands take an optional `section`; without it the first
+  section answers, so a card that reads a single section need not name it.
+  `<domain>/catalog/maintenance` is registered with the equipment section.
+- **Signals**: `signal_catalog_changed(domain)` fires for a change of any
+  section, `signal_catalog_changed(domain, section)` for one section.
+- `get_updater(hass, domain, section=None)`, `get_updaters(hass, domain)`.
 
 ### Behaviour
 
@@ -154,6 +184,10 @@ at `/reeftech_catalog_pack/<section>/`.
 | shared user | `<config>/reeftech_catalog/user/<section>/` | `/<domain>_catalog/shared/` |
 | user | `<config>/<domain>/catalog_user/` | `/<domain>_catalog/user/` |
 
+For a section after the first of its domain, `_<section>` is added to the
+folder name of the built-in, own and user rows (`catalog_user_water_tests/`) and
+to the URL prefix (`/<domain>_catalog_water_tests/...`).
+
 All of them share the section layout of this repository (the shared folders
 have one subfolder per section, as `items/` exists in each). On identical
 ids the later layer wins: built-in < downloaded < shared user < user. Entries of
@@ -196,7 +230,8 @@ entry, everything the CI would check.
 
 The cards never call the network. Each integration answers:
 
-- `<domain>/catalog` (`refresh`: optional, re-reads the folders): `{section,
+- `<domain>/catalog` (`refresh`: optional, re-reads the folders; `section`:
+  optional, the first section of the domain by default): `{section,
   format, version, updating, data}`. For equipment `data` holds `tasks`,
   `categories` and `items`; for supplements and water tests `items`. Every category, item
   and supplement carries `image`, `thumb` (URLs or null) and `source`

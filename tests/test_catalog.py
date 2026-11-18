@@ -568,7 +568,9 @@ def test_sync_client(root, tmp_path, capsys):
         root / "equipment/items/pool/item.json",
         {"category": "heater", "brand": "X", "model": "Y", "scopes": ["pool"]},
     )
-    for folder, (domain, _, _) in sync_client.TARGETS.items():
+    dump(root / "water_tests/items/kit/water_test.json", {"brand": "X", "name": "Y"})
+    dump(root / "parameters/items/kh/parameter.json", {"symbol": "KH"})
+    for folder, (domain, _) in sync_client.TARGETS.items():
         if folder != "ha-maintenance-hub":
             (base / folder / "custom_components" / domain).mkdir(parents=True)
 
@@ -579,8 +581,9 @@ def test_sync_client(root, tmp_path, capsys):
     ).exists()
 
     stale = sync_client.sync(base, root=root)
-    # 2 integrations x (3 modules + snapshot), the editor: 4 modules (with the rules), no snapshot
-    assert len(stale) == 12
+    # redsea: 3 modules + 3 snapshots; reef_maintenance: 3 modules + 1 snapshot;
+    # the editor: 4 modules (with the rules), no snapshot
+    assert len(stale) == 14
     editor = base / "reeftech_catalog_editor/custom_components/reeftech_catalog_editor"
     assert (
         (editor / "catalog_rules.py")
@@ -598,6 +601,9 @@ def test_sync_client(root, tmp_path, capsys):
         .startswith("# Generated from reeftech-catalog/client/catalog_pack.py")
     )
     assert (redsea / "catalog_builtin/items/brine/supplement.json").is_file()
+    # The sections after the first have a snapshot of their own
+    assert (redsea / "catalog_builtin_water_tests/items").is_dir()
+    assert (redsea / "catalog_builtin_parameters/items").is_dir()
     reef = (
         base
         / "ha-reef-maintenance-component/custom_components/reef_maintenance/catalog_builtin"

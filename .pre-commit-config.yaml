@@ -37,7 +37,7 @@ repos:
 
       - id: pytest
         name: Tests (100 % coverage)
-        entry: pytest --cov=scripts --cov=client --cov-fail-under=100 -q
+        entry: pytest -q --cov=scripts --cov=client --cov-fail-under=100 --cov-report=term-missing --cov-report=xml:reports/coverage.xml --cov-report=html:reports/htmlcov
         language: python
         additional_dependencies:
           - pytest-homeassistant-custom-component

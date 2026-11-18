@@ -10,12 +10,22 @@ from .catalog_runtime import CatalogSpec, async_setup_catalog, async_unload_cata
 
 DOMAIN = "catalog_demo"
 SPEC = CatalogSpec(DOMAIN, "equipment", "Demo equipment catalog", scopes=("aquarium",))
+#: Second section of the domain (folders and URLs carry the section)
+SPEC_SECOND = CatalogSpec(
+    DOMAIN,
+    "supplements",
+    "Demo supplements catalog",
+    by_section=True,
+)
+#: Sections read by the demo; a test adds the second one
+SPECS = [SPEC]
 PLATFORMS = [Platform.SWITCH, Platform.UPDATE]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Start the catalog, then the platforms."""
-    await async_setup_catalog(hass, entry, SPEC)
+    for spec in SPECS:
+        await async_setup_catalog(hass, entry, spec)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
@@ -23,5 +33,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload the platforms, then the catalog."""
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-    await async_unload_catalog(hass, entry, SPEC)
+    for spec in SPECS:
+        await async_unload_catalog(hass, entry, spec)
     return unloaded

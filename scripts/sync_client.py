@@ -12,7 +12,9 @@ For each integration found it writes, in custom_components/<domain>/:
   catalog_builtin/                     the entries of its section and scopes,
                                        used before the first download and offline
                                        (not for editors, which read the views of
-                                       the integrations)
+                                       the integrations); a domain reading several
+                                       sections has one folder per section after the
+                                       first: catalog_builtin_<section>/
 
 --check changes nothing and fails when a copy or a snapshot is out of date.
 """
@@ -24,6 +26,7 @@ import filecmp
 import shutil
 import sys
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
 
 from catalog import collect, entry_id, read_json
@@ -37,13 +40,41 @@ EXTRA_FILES: dict[str, tuple[str, ...]] = {
     "reeftech_catalog_editor": ("catalog_rules.py",),
 }
 
-#: checkout folder -> (domain, section, scopes kept or None for all); a domain
-#: without section has no built-in snapshot
-TARGETS: dict[str, tuple[str, str | None, tuple[str, ...] | None]] = {
-    "ha-reefbeat-component": ("redsea", "supplements", None),
-    "ha-reef-maintenance-component": ("reef_maintenance", "equipment", ("aquarium",)),
-    "ha-maintenance-hub": ("maintenance_hub", "equipment", None),
-    "reeftech_catalog_editor": ("reeftech_catalog_editor", None, None),
+
+@dataclass(frozen=True)
+class Reads:
+    """A section an integration reads, and what it keeps of it."""
+
+    section: str
+    #: scopes kept, None for all
+    scopes: tuple[str, ...] | None = None
+    #: folders and URLs carry the section (`CatalogSpec.by_section`): from the
+    #: second section of a domain on
+    by_section: bool = False
+
+    @property
+    def snapshot(self) -> str:
+        """Folder of the built-in snapshot, next to the modules."""
+        return "catalog_builtin" + (f"_{self.section}" if self.by_section else "")
+
+
+#: checkout folder -> (domain, sections read); a domain reading nothing has no
+#: built-in snapshot
+TARGETS: dict[str, tuple[str, tuple[Reads, ...]]] = {
+    "ha-reefbeat-component": (
+        "redsea",
+        (
+            Reads("supplements"),
+            Reads("water_tests", by_section=True),
+            Reads("parameters", by_section=True),
+        ),
+    ),
+    "ha-reef-maintenance-component": (
+        "reef_maintenance",
+        (Reads("equipment", ("aquarium",)),),
+    ),
+    "ha-maintenance-hub": ("maintenance_hub", (Reads("equipment"),)),
+    "reeftech_catalog_editor": ("reeftech_catalog_editor", ()),
 }
 
 
@@ -123,7 +154,7 @@ def _same_tree(left: Path, right: Path) -> bool:
 def sync(base: Path, check: bool = False, root: Path = REPO) -> list[str]:
     """Sync every integration found under `base`; return what is (or was) out of date."""
     stale: list[str] = []
-    for folder, (domain, section, scopes) in TARGETS.items():
+    for folder, (domain, reads) in TARGETS.items():
         component = base / folder / "custom_components" / domain
         if not component.is_dir():
             print(f"skip {folder}: no custom_components/{domain}")
@@ -131,8 +162,8 @@ def sync(base: Path, check: bool = False, root: Path = REPO) -> list[str]:
         with tempfile.TemporaryDirectory() as tmp:
             fresh = Path(tmp)
             write_client(fresh, domain)
-            if section is not None:
-                write_snapshot(root, section, scopes, fresh / "catalog_builtin")
+            for read in reads:
+                write_snapshot(root, read.section, read.scopes, fresh / read.snapshot)
             for name in client_files(domain):
                 target = component / name
                 if not target.is_file() or not filecmp.cmp(
@@ -141,15 +172,13 @@ def sync(base: Path, check: bool = False, root: Path = REPO) -> list[str]:
                     stale.append(f"{folder}/{name}")
                     if not check:
                         shutil.copyfile(fresh / name, target)
-            if section is not None and not _same_tree(
-                fresh / "catalog_builtin", component / "catalog_builtin"
-            ):
-                stale.append(f"{folder}/catalog_builtin")
+            for read in reads:
+                if _same_tree(fresh / read.snapshot, component / read.snapshot):
+                    continue
+                stale.append(f"{folder}/{read.snapshot}")
                 if not check:
-                    shutil.rmtree(component / "catalog_builtin", ignore_errors=True)
-                    shutil.copytree(
-                        fresh / "catalog_builtin", component / "catalog_builtin"
-                    )
+                    shutil.rmtree(component / read.snapshot, ignore_errors=True)
+                    shutil.copytree(fresh / read.snapshot, component / read.snapshot)
     return stale
 
 
