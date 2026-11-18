@@ -1,7 +1,12 @@
 {
   "name": {
     "en": "Heater",
-    "fr": "Chauffage"
+    "fr": "Chauffage",
+    "de": "Heizung",
+    "es": "Calentador",
+    "it": "Stufa",
+    "pl": "Podgrzewacz",
+    "pt": "Aquecedor"
   },
   "scopes": [
     "aquarium"
