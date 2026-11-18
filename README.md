@@ -197,7 +197,6 @@ so a pull request only adds the folder of its entry.
 
 <details>
 <summary><b>Equipment categories</b> (19)</summary>
-
 |  | Id | Category | Scopes | Default tasks |
 |---|---|---|---|---|
 |  | `aquarium` | Aquarium (routine) | aquarium | Water change, Clean the glass, ICP / water lab test, Replace RO/DI filters, Clean the sump, Vacuum sand bed |
@@ -209,6 +208,7 @@ so a pull request only adds the folder of its entry.
 |  | `fireplace` | Fireplace or stove | home | Chimney sweeping |
 |  | `heat_pump` | Heat pump | pool, home | Evaporator cleaning |
 | <img src="equipment/categories/heater/thumb.webp" width="48" alt=""> | `heater` | Heater | aquarium | Visual inspection, Heater test, Heater cleaning |
+| <img src="equipment/categories/light/thumb.webp" width="48" alt=""> | `light` | Light | aquarium |  |
 |  | `other` | Other equipment | aquarium, pool, home | Visual inspection |
 |  | `pool_basin` | Pool | pool | Pool winterizing, Pool restart |
 |  | `pool_filter` | Pool filter | pool | Filter backwash |

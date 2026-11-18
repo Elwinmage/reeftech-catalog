@@ -1,0 +1,10 @@
+{
+  "name": {
+    "en": "Light",
+    "fr": "Lumière"
+  },
+  "scopes": [
+    "aquarium"
+  ],
+  "icon": "mdi:light-recessed"
+}
