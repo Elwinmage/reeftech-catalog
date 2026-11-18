@@ -71,9 +71,9 @@ def _check_kind(
             getattr(ctx, group)[eid] = data
 
 
-def _check_equipment(root: Path, report: Report, validators) -> None:
+def _check_equipment(root: Path, report: Report, validators, brands) -> None:
     # Tasks, then categories, then the items that refer to both
-    ctx = Context()
+    ctx = Context(brands=brands)
     for entry in collect(root, "equipment"):
         if entry.kind != "tasks":
             continue
@@ -88,8 +88,8 @@ def _check_equipment(root: Path, report: Report, validators) -> None:
     _check_kind(root, report, validators, ctx, "equipment", "item")
 
 
-def _check_supplements(root: Path, report: Report, validators) -> None:
-    ctx = Context()
+def _check_supplements(root: Path, report: Report, validators, brands) -> None:
+    ctx = Context(brands=brands)
     _check_kind(
         root, report, validators, ctx, "supplements", "supplement", "supplements"
     )
@@ -102,9 +102,11 @@ def _check_parameters(root: Path, report: Report, validators) -> Context:
     return ctx
 
 
-def _check_water_tests(root: Path, report: Report, validators, parameters) -> None:
+def _check_water_tests(
+    root: Path, report: Report, validators, parameters, brands
+) -> None:
     # The tests refer to the parameters they measure
-    ctx = Context(parameters=parameters)
+    ctx = Context(parameters=parameters, brands=brands)
     _check_kind(
         root, report, validators, ctx, "water_tests", "water_test", "water_tests"
     )
@@ -116,10 +118,11 @@ def validate(root: Path) -> Report:
     for section in SECTIONS:
         if not (root / section).is_dir():
             report.error(section, "section folder missing")
-    _check_equipment(root, report, validators)
-    _check_supplements(root, report, validators)
+    brands: dict[str, str] = {}  # one spelling per brand, whatever the section
+    _check_equipment(root, report, validators, brands)
+    _check_supplements(root, report, validators, brands)
     parameters = _check_parameters(root, report, validators)
-    _check_water_tests(root, report, validators, parameters.parameters)
+    _check_water_tests(root, report, validators, parameters.parameters, brands)
     return report
 
 

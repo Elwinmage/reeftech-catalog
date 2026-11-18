@@ -131,6 +131,32 @@ def test_schema_record(release, tmp_path):
     assert cp.parse_manifest(data, "equipment").schema is None
 
 
+def test_shared_pack_parts():
+    assert cp.shared_pack_parts("equipment") == (
+        "reeftech_catalog",
+        "pack",
+        "equipment",
+    )
+
+
+def test_copy_pack(tmp_path):
+    src = tmp_path / "src"
+    dump(src / "items/a/item.json", {"brand": "A"})
+    dest = tmp_path / "config/dest"
+    cp.copy_pack(src, dest)  # nothing there yet, parents created
+    assert (dest / "items/a/item.json").is_file()
+
+    # An existing pack is replaced, leftovers of an interrupted copy are ignored
+    (dest / "stale.json").write_text("{}")
+    (tmp_path / "config/dest.new").mkdir()
+    (tmp_path / "config/dest.old").mkdir()
+    dump(src / "items/b/item.json", {"brand": "B"})
+    cp.copy_pack(src, dest)
+    assert (dest / "items/b/item.json").is_file() and not (dest / "stale.json").exists()
+    assert not (tmp_path / "config/dest.new").exists()
+    assert not (tmp_path / "config/dest.old").exists()
+
+
 def test_shared_user_parts():
     assert cp.shared_user_parts("equipment") == (
         "reeftech_catalog",
@@ -427,3 +453,15 @@ def test_resolve_maintenance():
 def test_archive_of_a_section_with_an_underscore():
     assert cp._ARCHIVE_RE.match("water_tests-2026.11.0/items.zip")
     assert not cp._ARCHIVE_RE.match("water-tests/../x.zip")
+
+
+def test_usable_icon_falls_back_outside_its_set():
+    assert cp.usable_icon("mdi:pump") == "mdi:pump"
+    assert cp.usable_icon("redsea:gyre-off") is None
+    assert cp.usable_icon("redsea:gyre-off", ("mdi", "redsea")) == "redsea:gyre-off"
+    assert cp.usable_icon(None) is None and cp.usable_icon("pump") is None
+    view = {"tasks": {"t": {"name": {}, "icon": "redsea:x", "schedule": {}}}}
+    view["categories"] = {"c": {"maintenance": [{"task": "t"}]}}
+    assert cp.resolve_maintenance(view, category_id="c")[0]["icon"] is None
+    shown = cp.resolve_maintenance(view, category_id="c", icon_sets=("mdi", "redsea"))
+    assert shown[0]["icon"] == "redsea:x"

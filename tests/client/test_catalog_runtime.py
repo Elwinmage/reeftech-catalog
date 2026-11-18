@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from datetime import timedelta
 from pathlib import Path
 
@@ -54,6 +55,12 @@ async def setup_entry(hass: HomeAssistant, entry_id: str = "one") -> MockConfigE
 
 
 def pack(hass: HomeAssistant) -> Path:
+    """The shared pack of the section, common to every reader."""
+    return Path(hass.config.path("reeftech_catalog", "pack", "equipment"))
+
+
+def own_pack(hass: HomeAssistant) -> Path:
+    """The pack of the domain's own folder (an integration too old for a release)."""
     return Path(hass.config.path(DOMAIN, "catalog"))
 
 
@@ -67,9 +74,10 @@ async def test_auto_install_and_websocket(
     assert state.attributes["installed_version"] == "2026.11.0"
     assert state.attributes["auto_update"] is True
     assert hass.states.get(SWITCH).state == "on"
-    # Scope 'aquarium' only: the boiler category is not downloaded
+    # The shared pack holds every scope; the view keeps the aquarium ones
     assert (pack(hass) / "items/eheim/item.json").is_file()
-    assert not (pack(hass) / "categories/boiler").exists()
+    assert (pack(hass) / "categories/boiler/category.json").is_file()
+    assert not own_pack(hass).joinpath("items").exists()
 
     client = await hass_ws_client(hass)
     await client.send_json_auto_id({"type": f"{DOMAIN}/catalog"})
@@ -87,7 +95,7 @@ async def test_auto_install_and_websocket(
     }  # built-in
     assert (
         data["items"]["eheim"]["image"]
-        == f"/{DOMAIN}_catalog/pack/items/eheim/image.webp?v=2026.11.0"
+        == "/reeftech_catalog_pack/equipment/items/eheim/image.webp?v=2026.11.0"
     )
 
     await client.send_json_auto_id(
@@ -106,7 +114,7 @@ async def test_static_files(hass, aioclient_mock, release, hass_client):
     serve(aioclient_mock, release)
     await setup_entry(hass)
     http = await hass_client()
-    response = await http.get(f"/{DOMAIN}_catalog/pack/items/eheim/image.webp")
+    response = await http.get("/reeftech_catalog_pack/equipment/items/eheim/image.webp")
     assert response.status == 200 and await response.read() == b"RIFFeheim"
     response = await http.get(f"/{DOMAIN}_catalog/builtin/tasks/visual_inspection.json")
     assert response.status == 200
@@ -198,18 +206,84 @@ async def test_release_notes(hass, aioclient_mock, release, hass_ws_client):
 async def test_incompatible_release(
     hass, aioclient_mock, catalog_root, tmp_path, caplog
 ):
+    """No previous pack to give: the integration keeps its built-in snapshot."""
     release = build_release(
         catalog_root, tmp_path / "d", "equipment", "2026.11.0", catalog_demo="9.0.0"
     )
     serve(aioclient_mock, release)
     await setup_entry(hass)
     assert "needs catalog_demo 9.0.0 or newer" in caplog.text
+    updater = rt.get_updater(hass, DOMAIN)
+    # The release is installed for the readers that can use it...
+    assert updater.shared.installed.version == "2026.11.0"
+    # ...but not used by this one
+    assert not updater.uses_shared and updater.installed is None
+    assert "eheim" not in updater.view["items"]
     state = hass.states.get(UPDATE)
+    assert state.attributes["installed_version"] == rt.NOT_INSTALLED
     assert state.attributes["release_summary"] == "Needs catalog_demo 9.0.0 or newer."
     with pytest.raises(HomeAssistantError):
         await hass.services.async_call(
             "update", "install", {"entity_id": UPDATE}, blocking=True
         )
+
+
+async def test_too_old_integration_keeps_the_previous_pack(
+    hass, aioclient_mock, release, catalog_root, tmp_path
+):
+    """A release it cannot use leaves it the previous pack as its own."""
+    serve(aioclient_mock, release)
+    await setup_entry(hass)
+    updater = rt.get_updater(hass, DOMAIN)
+    assert updater.uses_shared and not own_pack(hass).joinpath("items").exists()
+
+    second = build_release(
+        catalog_root,
+        tmp_path / "d2",
+        "equipment",
+        "2026.11.1",
+        release.manifest,
+        catalog_demo="9.0.0",
+    )
+    serve(aioclient_mock, second)
+    await updater.async_check()
+    await hass.async_block_till_done(wait_background_tasks=True)
+
+    assert updater.shared.installed.version == "2026.11.1"
+    assert not updater.uses_shared and not updater.compatible
+    assert updater.installed.version == "2026.11.0"  # its own copy
+    assert (own_pack(hass) / "items/eheim/item.json").is_file()
+    assert updater.view["items"]["eheim"]["image"] == (
+        f"/{DOMAIN}_catalog/pack/items/eheim/image.webp?v=2026.11.0"
+    )
+    state = hass.states.get(UPDATE)
+    assert state.attributes["installed_version"] == "2026.11.0"
+    assert state.attributes["latest_version"] == "2026.11.1"
+
+    # Updated: the shared pack serves again and the own folder is dropped
+    updater.integration_version = "9.1.0"
+    await updater.async_reload()
+    assert updater.uses_shared and updater.installed.version == "2026.11.1"
+    assert not own_pack(hass).joinpath("items").exists()
+    assert updater.view["items"]["eheim"]["image"].startswith(
+        "/reeftech_catalog_pack/equipment/"
+    )
+
+
+async def test_own_folder_of_an_older_client_is_dropped(hass, aioclient_mock, release):
+    """The pack an integration downloaded itself is replaced by the shared one."""
+    serve(aioclient_mock, release)
+    entry = await setup_entry(hass)
+    shutil.copytree(pack(hass), own_pack(hass), dirs_exist_ok=True)
+    await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert rt.get_shared_pack(hass, "equipment") is None
+    assert (own_pack(hass) / "items/eheim/item.json").is_file()
+
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert rt.get_updater(hass, DOMAIN).uses_shared
+    assert not own_pack(hass).joinpath("items").exists()
 
 
 async def test_broken_archive(hass, aioclient_mock, release, caplog):
@@ -222,12 +296,26 @@ async def test_broken_archive(hass, aioclient_mock, release, caplog):
     assert not rt.get_updater(hass, DOMAIN).in_progress
 
 
+async def test_manual_install_failure(hass, aioclient_mock, release):
+    await async_setup_component(hass, "homeassistant", {})
+    await rt.Store(hass, 1, f"{DOMAIN}.catalog").async_save({"auto_update": False})
+    for url in release.files:
+        release.files[url] = b"x" * len(release.files[url])
+    serve(aioclient_mock, release)
+    await setup_entry(hass)
+    with pytest.raises(HomeAssistantError, match="Catalog update failed"):
+        await hass.services.async_call(
+            "update", "install", {"entity_id": UPDATE}, blocking=True
+        )
+    assert rt.get_updater(hass, DOMAIN).installed is None
+
+
 async def test_install_in_progress_is_skipped(hass, aioclient_mock, release):
     aioclient_mock.get(release.manifest_url, status=500)
     await setup_entry(hass)
     updater = rt.get_updater(hass, DOMAIN)
     serve(aioclient_mock, release)
-    updater.in_progress = True
+    updater.shared.in_progress = True
     await updater.async_check()  # auto install skipped
     await updater.async_install()  # returns at once
     assert updater.installed is None
@@ -311,6 +399,7 @@ async def test_supplements_spec_and_no_http(hass, aioclient_mock):
     assert updater.entry_ids == ["sup"]
     assert f"websocket_{DOMAIN}" in hass.data[rt.DATA_KEY]
     assert f"paths_{DOMAIN}" not in hass.data[rt.DATA_KEY]  # no http component loaded
+    assert "pack_paths_supplements" not in hass.data[rt.DATA_KEY]
     await hass.async_block_till_done(wait_background_tasks=True)
     await rt.async_unload_catalog(hass, entry, spec)
 
@@ -401,3 +490,84 @@ async def test_shared_user_layer(hass, aioclient_mock, release, hass_client):
     async_dispatcher_send(hass, rt.SIGNAL_USER_CATALOG_CHANGED, None)
     await hass.async_block_till_done(wait_background_tasks=True)
     assert updater.user_revision == 2
+
+
+# -- shared pack: holders other than an integration (editors) --------------------
+
+
+async def test_editor_holds_the_pack_without_any_integration(
+    hass, aioclient_mock, release
+):
+    """A tool that reads no section keeps and refreshes the pack all the same."""
+    serve(aioclient_mock, release)
+    await async_setup_component(hass, "http", {})
+    pack_ = await rt.async_acquire_pack(hass, "equipment", "editor", auto=True)
+    assert rt.get_shared_pack(hass, "equipment") is pack_ and pack_.wants_auto
+    changes: list[None] = []
+    remove = pack_.async_add_listener(lambda: changes.append(None))
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert pack_.installed.version == "2026.11.0" and changes
+    assert (pack(hass) / "items/eheim/item.json").is_file()
+    assert pack_.last_error is None and not pack_.update_available
+
+    # A second holder shares it and is not started again
+    again = await rt.async_acquire_pack(hass, "equipment", "other")
+    assert again is pack_ and pack_.holders["other"] == (False, rt.CHECK_HOURS)
+    pack_.set_auto("editor", False)
+    assert not pack_.wants_auto
+
+    remove()
+    changes.clear()
+    await pack_.async_check()
+    assert not changes
+
+    rt.async_release_pack(hass, "equipment", "unknown")  # not a holder: no effect
+    rt.async_release_pack(hass, "equipment", "editor")
+    assert rt.get_shared_pack(hass, "equipment") is pack_  # "other" still holds it
+    rt.async_release_pack(hass, "equipment", "other")
+    assert rt.get_shared_pack(hass, "equipment") is None
+    rt.async_release_pack(hass, "equipment", "other")  # gone: no effect
+
+
+async def test_forced_check_and_never_checked(
+    hass, aioclient_mock, release, catalog_root, tmp_path
+):
+    aioclient_mock.get(release.manifest_url, status=500)
+    await async_setup_component(hass, "http", {})
+    pack_ = await rt.async_acquire_pack(hass, "equipment", "editor")  # no auto
+    await hass.async_block_till_done(wait_background_tasks=True)
+    with pytest.raises(rt.PackError, match="not been checked"):
+        await pack_.async_install()
+    assert pack_.last_error and pack_.installed is None
+    assert not pack_.update_available  # nothing known yet
+
+    serve(aioclient_mock, release)
+    await pack_.async_check()  # nobody wants an automatic install
+    assert pack_.installed is None and pack_.update_available
+    await pack_.async_check(force=True)
+    assert pack_.installed.version == "2026.11.0"
+
+    # The check pace is the one of the most demanding holder
+    await rt.async_acquire_pack(hass, "equipment", "fast", check_hours=1)
+    serve(aioclient_mock, release)
+    second = build_release(
+        catalog_root, tmp_path / "d2", "equipment", "2026.11.1", release.manifest
+    )
+    serve(aioclient_mock, second)
+    pack_.set_auto("fast", True)
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(hours=1, minutes=1))
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert pack_.installed.version == "2026.11.1"
+    # Give the pack back: its timer must not outlive the test
+    rt.async_release_pack(hass, "equipment", "fast")
+    rt.async_release_pack(hass, "equipment", "editor")
+
+
+async def test_acquire_failure_leaves_nothing_behind(hass, monkeypatch):
+    def broken(self):
+        raise OSError("read-only file system")
+
+    monkeypatch.setattr(rt.SharedPack, "_prepare_folder", broken)
+    with pytest.raises(OSError):
+        await rt.async_acquire_pack(hass, "equipment", "editor")
+    assert rt.get_shared_pack(hass, "equipment") is None

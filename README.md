@@ -384,10 +384,14 @@ so a pull request only adds the folder of its entry.
 | NO3 | Nitrate | nutrient | ppm | 1-10 (5) |
 | PO4 | Phosphate | nutrient | ppm | 0.02-0.1 (0.05) |
 
-### Water tests (0, 0 brands)
+### Water tests (4, 3 brands)
 
 | | Brand | Test | Parameters |
 |---|---|---|---|
+|  | Colombo | Marine Calcium Test | Ca (titration) |
+|  | Red Sea | Reef Foundation Pro Multi Test Kit | Ca (titration), KH (titration), Mg (titration) |
+|  | Salifert | Calcium Profi Test | Ca (titration) |
+|  | Salifert | KH/Alkalinity Profi Test | KH (titration) |
 
 <!-- catalog:end -->
 

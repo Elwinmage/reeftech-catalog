@@ -16,9 +16,10 @@ copied into each integration by `scripts/sync_client.py`.
 Both maintenance integrations may be installed together; each keeps its own
 copy so that neither depends on the other.
 
-Limit: a `CatalogUpdater` is registered per domain, so a domain reading two
-sections (redsea: supplements and water tests) needs the registry of
-`catalog_runtime` keyed by (domain, section) first.
+The downloaded pack is shared (see [Shared pack](#shared-pack)), so it is keyed
+by section. Limit that remains: a `CatalogUpdater` is registered per domain, so a
+domain reading two sections (redsea: supplements and water tests) still needs
+the updater registry of `catalog_runtime` keyed by (domain, section).
 
 ## The client
 
@@ -27,9 +28,9 @@ side (or with `--base`), writes into `custom_components/<domain>/`:
 
 - `catalog_pack.py`: manifest, download, checks, atomic install, merged view
   (no Home Assistant dependency);
-- `catalog_runtime.py`: the Home Assistant side (updater shared by all the
-  config entries of the domain, update entity, automatic update switch,
-  static paths, websocket commands);
+- `catalog_runtime.py`: the Home Assistant side (shared pack of the section,
+  updater shared by all the config entries of the domain, update entity,
+  automatic update switch, static paths, websocket commands);
 - `catalog_builtin/`: a snapshot of the section, filtered by scopes, used
   before the first download and offline.
 
@@ -89,38 +90,72 @@ it). Messages to add to `strings.json` and the translations:
 1. At start-up (in the background, never delaying the set-up) and every 12
    hours, read `https://github.com/Elwinmage/reeftech-catalog/releases/download/<section>-latest/manifest.json`.
    A network failure keeps the installed catalog, quietly (debug log).
-2. Keep the entries of the consumer's scopes, using the manifest only.
-3. Skip, with a warning and a note on the update entity, a release whose
-   `min_integration[<domain>]` is newer than the integration.
-4. Download only the entries whose `sha256` changed, from
+2. Download only the entries whose `sha256` changed, from
    `https://github.com/Elwinmage/reeftech-catalog/releases/download/<archive>`.
-5. Check each archive: size and sha256 from the manifest, flat file names,
+   The pack holds every scope; each integration keeps its own scopes when it
+   builds its view.
+3. Check each archive: size and sha256 from the manifest, flat file names,
    only `json`/`webp`/`png`, bounded sizes, JSON objects that parse.
-6. Prepare the new pack next to the old one and swap it in one move: an
+4. Prepare the new pack next to the old one and swap it in one move: an
    interrupted update leaves the previous pack untouched.
-7. One config entry hosts the device *<title>* with `update.<title>` and
+5. Warn, with a note on the update entity, for an integration whose
+   `min_integration[<domain>]` is newer than its version: the release is
+   installed for the others, and this one keeps its previous pack (see
+   below).
+6. One config entry hosts the device *<title>* with `update.<title>` and
    `switch.<title>_automatic_update` (on by default, kept in
    `.storage/<domain>.catalog`). When that entry is removed while others stay,
    the next one is reloaded and hosts them. An integration with several
    entries of the same kind (redsea: one per doser) gives the catalog an
    entry of its own instead, created by a config flow step, so that its
    device does not hang on one of them.
-8. Each change of the catalog (loaded, installed, stopped) is also sent as
+7. Each change of the catalog (loaded, installed, stopped) is also sent as
    the dispatcher signal `signal_catalog_changed(domain)`: entities of other
    entries, possibly set up before the catalog, follow it with
    `async_dispatcher_connect`.
+
+### Shared pack
+
+The downloaded pack of a section is common to every integration reading it and
+to the editors: it is kept in `<config>/reeftech_catalog/pack/<section>/` by a
+`SharedPack`, one per section, whoever downloads first. The visuals are served
+at `/reeftech_catalog_pack/<section>/`.
+
+- **Holders.** The updater of each integration is a holder, and so is a tool
+  that takes the pack with `async_acquire_pack(hass, section, holder, auto=...)`
+  and gives it back with `async_release_pack`. The last holder stops the checks.
+- **Automatic installs.** A release is installed by itself when at least one
+  holder wants it: the *Automatic update* switch of an integration turned off
+  does not hold back the others. `SharedPack.async_check(force=True)` checks
+  and installs whatever the holders want (a *refresh* button).
+- **Updates.** Installing sends `signal_catalog_changed(domain)` for every
+  updater of the section, after reloading its view. `SharedPack` also
+  accepts listeners (`async_add_listener`) and keeps the reason of a failed
+  check or install in `last_error`.
+- **An integration too old for a release.** When `min_integration` of the new
+  release is newer than the integration, the release is installed anyway; the
+  integration does not use it. Right before the swap, the previous shared pack
+  (when the integration could use it) is copied into the integration's own
+  folder `<config>/<domain>/catalog/`, served at `/<domain>_catalog/pack/`, and
+  the view is built on it. Once the integration is updated, it switches to the
+  shared pack and its own folder is removed.
+- **Older clients.** An integration still carrying a client from before the
+  shared pack keeps downloading into its own folder, and only misses the
+  sharing. When it gets the new client, its own folder is removed as soon as the
+  shared pack can serve it.
 
 ### Folders
 
 | Layer | Folder | Served at |
 |---|---|---|
 | built-in | `custom_components/<domain>/catalog_builtin/` | `/<domain>_catalog/builtin/` |
-| downloaded | `<config>/<domain>/catalog/` | `/<domain>_catalog/pack/` |
+| downloaded (shared) | `<config>/reeftech_catalog/pack/<section>/` | `/reeftech_catalog_pack/<section>/` |
+| downloaded (own, only for an integration too old for the release) | `<config>/<domain>/catalog/` | `/<domain>_catalog/pack/` |
 | shared user | `<config>/reeftech_catalog/user/<section>/` | `/<domain>_catalog/shared/` |
 | user | `<config>/<domain>/catalog_user/` | `/<domain>_catalog/user/` |
 
-All of them share the section layout of this repository (the shared user
-folder has one subfolder per section, as `items/` exists in each). On identical
+All of them share the section layout of this repository (the shared folders
+have one subfolder per section, as `items/` exists in each). On identical
 ids the later layer wins: built-in < downloaded < shared user < user. Entries of
 both user layers are reported with `source: "user"`. Visuals are public catalog
 data, served without authentication.
@@ -151,8 +186,7 @@ The manifest of each release has a `schema` record (`archive`, `sha256`,
 and the schemas of the kinds of the section. It is data only, and it is not an
 entry: integrations reading the entries never download it. A tool editing the
 catalog reads it with `PackClient.entry(manifest.schema)` and `extract_entry`, to
-check a draft against the schemas of the release the integrations have
-installed. Rules that JSON Schema cannot express (cross references, bounds
+check a draft against the schemas of the release the shared pack has installed. Rules that JSON Schema cannot express (cross references, bounds
 between fields, uniqueness) are in `client/catalog_rules.py`, used both by
 `scripts/validate.py` (CI) and by the editing tools, which get a copy through
 `sync_client.py`: a release never carries code. `validate_draft` runs, for one
@@ -183,7 +217,10 @@ attached to (a socket switch such as `switch.rspower_…_socket_3`, any other
 entity, a HA device, or nothing) + its tasks. It is stored by the maintenance
 integration, not by redsea:
 
-- attaching an entry offers to create its tasks (`resolve_maintenance`);
+- attaching an entry offers to create its tasks (`resolve_maintenance`). A task
+  icon is `mdi:` or `redsea:` (the Red Sea set, provided by the redsea
+  integration): pass `icon_sets=("mdi", "redsea")` when that set is available, the
+  default `("mdi",)` gives `None` for a `redsea:` icon so that your own default shows;
   two heaters on two sockets give two task sets, named after their socket;
 - changing the entry of an attachment offers to remove or archive the old
   tasks, never silently;

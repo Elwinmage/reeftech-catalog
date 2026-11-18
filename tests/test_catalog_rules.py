@@ -294,3 +294,29 @@ def test_water_test_tables(validators, ctx):
     odd = water_test(parameter="ph", unit="ph")
     ctx.parameters["ph"] = {"symbol": "pH", "unit": "ph"}
     assert draft(validators, ctx, "water_test", "a", odd).errors == []
+
+
+def test_brand_key():
+    assert rules.brand_key("Red Sea") == rules.brand_key("red-sea") == "redsea"
+    assert rules.brand_key("Aqua Médic") == "aquamedic"
+
+
+def test_brand_keeps_its_spelling(validators, ctx):
+    ctx.brands[rules.brand_key("Red Sea")] = "Red Sea"
+    item = {"category": "heater", "brand": "Red-Sea", "model": "1"}
+    found = draft(validators, ctx, "item", "red-sea-1", item).errors
+    assert any("brand 'Red-Sea' is written 'Red Sea' elsewhere" in e for e in found)
+    ok = draft(validators, ctx, "item", "red-sea-1", {**item, "brand": "Red Sea"})
+    assert not any("brand" in e for e in ok.errors)
+    # A new brand is remembered for the next entries
+    draft(validators, ctx, "item", "acme-1", {**item, "brand": "Acme"})
+    assert ctx.brands["acme"] == "Acme"
+    late = draft(validators, ctx, "item", "acme-2", {**item, "brand": "ACME"})
+    assert any("written 'Acme'" in e for e in late.errors)
+
+
+def test_icon_sets(validators, ctx):
+    task = {"name": {"en": "T"}, "schedule": INTERVAL}
+    for icon, ok in (("mdi:pump", True), ("redsea:gyre-off", True), ("fa:pump", False)):
+        errors = draft(validators, ctx, "task", "t", {**task, "icon": icon}).errors
+        assert (errors == []) is ok, (icon, errors)

@@ -27,9 +27,9 @@
       "uniqueItems": true
     },
     "icon": {
-      "description": "Material Design Icon used when no image is shown.",
+      "description": "Icon used when no image is shown: a Material Design Icon (mdi:) or one of the Red Sea set (redsea:, only on installations having the redsea integration; the others fall back to their default icon).",
       "type": "string",
-      "pattern": "^mdi:[a-z0-9-]+$"
+      "pattern": "^(mdi|redsea):[a-z0-9-]+$"
     },
     "bounded_int": {
       "type": "object",
