@@ -42,7 +42,7 @@ import logging
 import re
 import shutil
 import zipfile
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field, replace
 from pathlib import Path, PurePosixPath
 from typing import Any
@@ -71,6 +71,71 @@ SECTION_KINDS: dict[str, frozenset[str]] = {
     "parameters": frozenset({"parameter"}),
     "water_tests": frozenset({"water_test"}),
 }
+#: Repository of the sections declared with `register_section`: the ones another
+#: catalog publishes in this release format (none here: REPO publishes its own)
+SECTION_REPOS: dict[str, str] = {}
+
+_SECTION_RE = re.compile(r"^[a-z]+(?:_[a-z]+)*$")
+_KIND_RE = re.compile(r"^[a-z]+(?:_[a-z]+)*$")
+_REPO_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
+_FOLDER_RE = re.compile(r"^[a-z]+(?:_[a-z]+)*$")
+
+
+def repo_of(section: str) -> str:
+    """`owner/name` of the GitHub repository publishing a section."""
+    return SECTION_REPOS.get(section, REPO)
+
+
+def register_section(
+    section: str, kinds: Mapping[str, tuple[str, str]], repo: str
+) -> None:
+    """Declare a section another catalog publishes in this release format.
+
+    The client only knows the sections of REPO. An integration reading another
+    catalog, or a tool editing it, declares each of its sections before using
+    the client (when its package is imported): `kinds` maps the kinds of entries
+    of the section to their folder and descriptor file, one folder per entry
+    (`{"plant": ("items", "plant.json")}` for `<section>/items/<id>/plant.json`),
+    and `repo` is the `owner/name` GitHub repository publishing its releases.
+    The section is then read, downloaded and merged like the others.
+
+    Each integration holds its own copy of this module, so a declaration only
+    concerns the integration making it. Declaring a section again with the same
+    content does nothing.
+
+    @raise ValueError: bad name, or declaration contradicting a known section or kind
+    """
+    if not _SECTION_RE.match(section) or not _REPO_RE.match(repo) or not kinds:
+        raise ValueError(f"bad section {section!r}, repository {repo!r} or no kind")
+    layout: dict[str, tuple[str, str | None]] = {}
+    for kind, (folder, descriptor) in kinds.items():
+        if (
+            not _KIND_RE.match(kind)
+            or kind == SCHEMA_KIND
+            or not _FOLDER_RE.match(folder)
+            or not _FILE_RE.match(descriptor)
+            or not descriptor.endswith(".json")
+        ):
+            raise ValueError(f"section {section}: bad kind {kind!r}")
+        layout[kind] = (folder, descriptor)
+    known = SECTION_KINDS.get(section)
+    if known is not None:
+        same = (
+            known == frozenset(layout)
+            and repo_of(section) == repo
+            and all(KIND_LAYOUT[kind] == layout[kind] for kind in layout)
+        )
+        if not same:
+            raise ValueError(f"section {section!r} is already declared otherwise")
+        return
+    taken = [kind for kind in layout if kind in KIND_LAYOUT]
+    if taken:
+        raise ValueError(f"section {section}: kind {taken[0]!r} belongs to a section")
+    KIND_LAYOUT.update(layout)
+    SECTION_KINDS[section] = frozenset(layout)
+    SECTION_REPOS[section] = repo
+
+
 #: Kind of the manifest `schema` record (not an entry of the section)
 SCHEMA_KIND = "schema"
 #: Folders, under the Home Assistant config folder, of the user layer shared by
@@ -441,12 +506,16 @@ class PackClient:
     """Reads the releases of one section of the catalog repository."""
 
     def __init__(
-        self, session: aiohttp.ClientSession, section: str, repo: str = REPO
+        self, session: aiohttp.ClientSession, section: str, repo: str | None = None
     ) -> None:
-        """Bind to a section of a `owner/name` GitHub repository."""
+        """Bind to a section of a `owner/name` GitHub repository.
+
+        Without `repo`, the repository publishing the section (`repo_of`).
+        """
         self._session = session
         self.section = section
-        self.base_url = f"https://github.com/{repo}/releases"
+        self.repo = repo or repo_of(section)
+        self.base_url = f"https://github.com/{self.repo}/releases"
 
     @property
     def manifest_url(self) -> str:

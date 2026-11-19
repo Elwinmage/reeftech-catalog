@@ -24,6 +24,7 @@ from pytest_homeassistant_custom_component.common import (
 
 from conftest import Release, build_release, dump
 from custom_components.catalog_demo import SPEC
+from custom_components.catalog_demo import catalog_pack as demo_pack
 from custom_components.catalog_demo import catalog_runtime as rt
 
 DOMAIN = "catalog_demo"
@@ -286,6 +287,25 @@ async def test_own_folder_of_an_older_client_is_dropped(hass, aioclient_mock, re
     await hass.async_block_till_done(wait_background_tasks=True)
     assert rt.get_updater(hass, DOMAIN).uses_shared
     assert not own_pack(hass).joinpath("items").exists()
+
+
+async def test_own_folder_is_emptied_never_removed(hass, aioclient_mock, release):
+    """It is served as a static path: an install ending while the paths of another
+    section register (start-up) must find the folder where it was."""
+    serve(aioclient_mock, release)
+    await setup_entry(hass)
+    updater = rt.get_updater(hass, DOMAIN)
+    own = own_pack(hass)
+    assert updater.uses_shared and own.is_dir()
+    before = own.stat().st_ino
+    (own / "items/old").mkdir(parents=True)
+    (own / "items/old/item.json").write_text("{}")
+    (own / "manifest.json").write_text("{}")
+    (own / "link").symlink_to(own / "items")
+
+    assert updater._prepare_folders() is None  # what a reload does after an install
+    assert list(own.iterdir()) == []
+    assert own.stat().st_ino == before  # the same folder, not a new one
 
 
 async def test_broken_archive(hass, aioclient_mock, release, caplog):
@@ -823,4 +843,18 @@ async def test_one_button_for_every_section(
     assert hass.states.get(FIRST_UPDATE).attributes["installed_version"] == "2026.11.0"
     assert hass.states.get(SECOND_UPDATE).attributes["installed_version"] == (
         "2026.11.1"
+    )
+
+
+def test_a_spec_knows_the_repository_of_its_section(monkeypatch):
+    assert rt.CatalogSpec("redsea", "supplements", "S").repository == (
+        "Elwinmage/reeftech-catalog"
+    )
+    # a section declared with register_section is read from its own repository
+    monkeypatch.setitem(demo_pack.SECTION_REPOS, "plants", "someone/garden-catalog")
+    assert rt.CatalogSpec("garden", "plants", "Plants").repository == (
+        "someone/garden-catalog"
+    )
+    assert rt.CatalogSpec("garden", "plants", "P", repo="me/fork").repository == (
+        "me/fork"
     )

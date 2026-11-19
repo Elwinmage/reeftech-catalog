@@ -465,3 +465,135 @@ def test_usable_icon_falls_back_outside_its_set():
     assert cp.resolve_maintenance(view, category_id="c")[0]["icon"] is None
     shown = cp.resolve_maintenance(view, category_id="c", icon_sets=("mdi", "redsea"))
     assert shown[0]["icon"] == "redsea:x"
+
+
+# -- sections of another catalog ------------------------------------------------
+
+GARDEN = "someone/garden-catalog"
+PLANTS = {"plant": ("items", "plant.json"), "plant_family": ("families", "family.json")}
+
+
+@pytest.fixture
+def tables():
+    """The section tables as they were, whatever a test declares."""
+    saved = (dict(cp.KIND_LAYOUT), dict(cp.SECTION_KINDS), dict(cp.SECTION_REPOS))
+    yield
+    for table, content in zip(
+        (cp.KIND_LAYOUT, cp.SECTION_KINDS, cp.SECTION_REPOS), saved, strict=True
+    ):
+        table.clear()
+        table.update(content)
+
+
+def test_the_client_only_knows_its_own_sections():
+    assert sorted(cp.SECTION_KINDS) == [
+        "equipment",
+        "parameters",
+        "supplements",
+        "water_tests",
+    ]
+    assert cp.SECTION_REPOS == {}
+    assert cp.repo_of("equipment") == cp.repo_of("water_tests") == cp.REPO
+    with pytest.raises(cp.PackError, match="unknown section 'plants'"):
+        cp.parse_manifest({"format": 1}, "plants")
+
+
+def test_a_declared_section_is_read_from_its_repository(tables, tmp_path: Path):
+    cp.register_section("plants", PLANTS, GARDEN)
+    assert cp.SECTION_KINDS["plants"] == frozenset({"plant", "plant_family"})
+    assert cp.KIND_LAYOUT["plant_family"] == ("families", "family.json")
+    assert cp.repo_of("plants") == GARDEN and cp.repo_of("equipment") == cp.REPO
+    session = FakeSession({})
+    assert cp.PackClient(session, "plants").manifest_url == (
+        "https://github.com/someone/garden-catalog/releases/download/"
+        "plants-latest/manifest.json"
+    )
+    assert cp.PackClient(session, "supplements").repo == cp.REPO
+    # a fork, or a catalog under test, is still given by hand
+    assert cp.PackClient(session, "plants", "me/fork").base_url == (
+        "https://github.com/me/fork/releases"
+    )
+
+    record = {
+        "content_hash": "a" * 64,
+        "sha256": "b" * 64,
+        "size": 10,
+        "since": "2026.11.0",
+    }
+    raw = {
+        "format": 1,
+        "section": "plants",
+        "version": "2026.11.0",
+        "min_integration": {"garden": "0.2.0"},
+        "notes": "",
+        "entries": {
+            "plant.rose": record
+            | {"kind": "plant", "archive": "plants-2026.11.0/plant.rose.zip"},
+            "plant_family.rosaceae": record
+            | {
+                "kind": "plant_family",
+                "archive": "plants-2026.11.0/plant_family.rosaceae.zip",
+            },
+        },
+    }
+    manifest = cp.parse_manifest(raw, "plants")
+    assert str(manifest.entries["plant.rose"].rel_dir) == "items/rose"
+    assert str(manifest.entries["plant_family.rosaceae"].rel_dir) == "families/rosaceae"
+    # an entry of another section is still refused
+    stray = raw | {"entries": {"item.x": record | {"kind": "item", "archive": "x"}}}
+    with pytest.raises(cp.PackError, match="kind 'item' not in section plants"):
+        cp.parse_manifest(stray, "plants")
+
+    root = tmp_path / "plants"
+    folder = root / "items" / "rose"
+    folder.mkdir(parents=True)
+    (folder / "plant.json").write_text(json.dumps({"name": {"en": "Rose"}}))
+    (folder / "thumb.webp").write_bytes(b"x")
+    view = cp.build_view([cp.Layer("pack", root, "/pack/plants", "1")], "plants")
+    assert view["items"]["rose"]["name"] == {"en": "Rose"}
+    assert view["items"]["rose"]["thumb"].startswith(
+        "/pack/plants/items/rose/thumb.webp"
+    )
+    assert view["items"]["rose"]["source"] == "pack"
+
+
+def test_declaring_a_section_again(tables):
+    cp.register_section("plants", PLANTS, GARDEN)
+    before = (dict(cp.KIND_LAYOUT), dict(cp.SECTION_KINDS), dict(cp.SECTION_REPOS))
+    cp.register_section("plants", dict(PLANTS), GARDEN)  # same content: nothing to do
+    assert before == (cp.KIND_LAYOUT, cp.SECTION_KINDS, cp.SECTION_REPOS)
+    for kinds, repo in (
+        (PLANTS, "other/repo"),
+        ({"plant": ("items", "plant.json")}, GARDEN),
+        (PLANTS | {"plant": ("plants", "plant.json")}, GARDEN),
+    ):
+        with pytest.raises(ValueError, match="already declared otherwise"):
+            cp.register_section("plants", kinds, repo)
+    # the sections of this repository cannot be taken over, nor their kinds
+    with pytest.raises(ValueError, match="already declared otherwise"):
+        cp.register_section("equipment", {"item": ("items", "item.json")}, GARDEN)
+    with pytest.raises(ValueError, match="kind 'item' belongs to a section"):
+        cp.register_section("tools", {"item": ("items", "item.json")}, GARDEN)
+    assert before == (cp.KIND_LAYOUT, cp.SECTION_KINDS, cp.SECTION_REPOS)
+
+
+@pytest.mark.parametrize(
+    ("section", "kinds", "repo"),
+    [
+        ("Plants", PLANTS, GARDEN),
+        ("plants-2", PLANTS, GARDEN),
+        ("plants", PLANTS, "no-owner"),
+        ("plants", PLANTS, "https://github.com/someone/garden-catalog"),
+        ("plants", {}, GARDEN),
+        ("plants", {"Plant": ("items", "plant.json")}, GARDEN),
+        ("plants", {"schema": ("items", "plant.json")}, GARDEN),
+        ("plants", {"plant": ("../items", "plant.json")}, GARDEN),
+        ("plants", {"plant": ("items", "plant.yaml")}, GARDEN),
+        ("plants", {"plant": ("items", "a/plant.json")}, GARDEN),
+    ],
+)
+def test_a_bad_declaration_changes_nothing(tables, section, kinds, repo):
+    before = (dict(cp.KIND_LAYOUT), dict(cp.SECTION_KINDS), dict(cp.SECTION_REPOS))
+    with pytest.raises(ValueError, match="bad"):
+        cp.register_section(section, kinds, repo)
+    assert before == (cp.KIND_LAYOUT, cp.SECTION_KINDS, cp.SECTION_REPOS)

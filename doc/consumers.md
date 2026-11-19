@@ -42,6 +42,33 @@ demo integration (`tests/client/custom_components/catalog_demo`); an
 integration may leave them out of its own coverage
 (`omit = ["*/catalog_pack.py", "*/catalog_runtime.py"]`).
 
+### Sections of another catalog
+
+The client only knows the sections of this repository. A catalog that keeps
+this release format in a repository of its own is read with the same client:
+the integration reading it (and the tool editing it) declares each of its
+sections when its package is imported, before using the client:
+
+```python
+from .catalog_pack import register_section
+
+register_section("plants", {"plant": ("items", "plant.json")}, "someone/garden-catalog")
+```
+
+`kinds` maps each kind of entry to its folder and its descriptor file
+(`plants/items/<id>/plant.json`); the last argument is the GitHub repository
+publishing the releases `plants-<version>` and `plants-latest`. From then on
+`repo_of("plants")` is that repository, which `PackClient`, `SharedPack`,
+`async_acquire_pack` and `CatalogSpec.repository` use by default, and the
+section is downloaded, checked and merged like the others (shared pack and
+shared user layer included).
+
+Each integration holds its own copy of the client, so a declaration only
+concerns the integration making it; declaring a section again with the same
+content does nothing, and a declaration contradicting a known section or kind
+is refused. The built-in snapshots of such a section are written by the tools
+of its own catalog; `sync_client.py` of this repository only copies the client.
+
 ### Wiring
 
 ```python

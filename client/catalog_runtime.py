@@ -105,7 +105,6 @@ except ImportError:  # pragma: no cover - depends on the installed HA version
 
 from .catalog_pack import (
     MANIFEST_FORMAT,
-    REPO,
     Layer,
     Manifest,
     PackClient,
@@ -118,6 +117,7 @@ from .catalog_pack import (
     plan,
     prepare_staging,
     read_installed,
+    repo_of,
     resolve_maintenance,
     shared_pack_parts,
     shared_user_parts,
@@ -144,10 +144,11 @@ class CatalogSpec:
     """What an integration reads from the catalog."""
 
     domain: str
-    section: str  # equipment | supplements | parameters | water_tests
+    section: str  # a section of REPO, or one declared with register_section
     title: str  # name of the catalog device
     scopes: tuple[str, ...] | None = None  # None keeps every scope
-    repo: str = REPO
+    #: `owner/name` on GitHub; None: the repository publishing the section
+    repo: str | None = None
     check_hours: int = CHECK_HOURS
     #: Folders and URLs of the domain carry the section (`catalog_user_<section>`,
     #: `/<domain>_catalog_<section>/...`): needed from the second section of a
@@ -162,6 +163,11 @@ class CatalogSpec:
     def suffix(self) -> str:
         """What the folders and URLs of this section add to the plain names."""
         return f"_{self.section}" if self.by_section else ""
+
+    @property
+    def repository(self) -> str:
+        """`owner/name` of the GitHub repository the section is read from."""
+        return self.repo or repo_of(self.section)
 
 
 def signal_catalog_changed(domain: str, section: str | None = None) -> str:
@@ -229,7 +235,9 @@ class SharedPack:
     such an updater keeps the previous pack as its own (see `_preserve`).
     """
 
-    def __init__(self, hass: HomeAssistant, section: str, repo: str = REPO) -> None:
+    def __init__(
+        self, hass: HomeAssistant, section: str, repo: str | None = None
+    ) -> None:
         """Bind to the shared folder of the section."""
         self.hass = hass
         self.section = section
@@ -436,7 +444,7 @@ async def async_acquire_pack(
     *,
     auto: bool = False,
     check_hours: int = CHECK_HOURS,
-    repo: str = REPO,
+    repo: str | None = None,
 ) -> SharedPack:
     """Take the shared pack of a section for a holder, starting it with the first one.
 
@@ -626,12 +634,21 @@ class CatalogUpdater:
         )
 
     def _prepare_folders(self) -> Manifest | None:
-        """Create the folders; read the own pack, or drop it once the shared one serves."""
+        """Create the folders; read the own pack, or drop it once the shared one serves.
+
+        The own pack is emptied, its folder never removed: it is served as a static
+        path, and an install ending while the paths are registered (start-up) must
+        not make the folder vanish under the registration.
+        """
         self.user_root.mkdir(parents=True, exist_ok=True)
         self.shared_root.mkdir(parents=True, exist_ok=True)
-        if self.uses_shared:
-            shutil.rmtree(self.root, ignore_errors=True)
         self.root.mkdir(parents=True, exist_ok=True)
+        if self.uses_shared:
+            for child in self.root.iterdir():
+                if child.is_dir() and not child.is_symlink():
+                    shutil.rmtree(child, ignore_errors=True)
+                else:
+                    child.unlink(missing_ok=True)
         return read_installed(self.root, self.spec.section)
 
     async def async_reload(self) -> None:
@@ -1012,7 +1029,7 @@ class _CatalogEntity(Entity):
             name=self._device_name,
             manufacturer=MANUFACTURER,
             entry_type=DeviceEntryType.SERVICE,
-            configuration_url=f"https://github.com/{spec.repo}",
+            configuration_url=f"https://github.com/{spec.repository}",
         )
         self._refresh()
 

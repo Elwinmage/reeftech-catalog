@@ -582,9 +582,15 @@ def test_sync_client(root, tmp_path, capsys):
 
     stale = sync_client.sync(base, root=root)
     # redsea: 3 modules + 3 snapshots; reef_maintenance: 3 modules + 1 snapshot;
-    # the editor: 4 modules (with the rules), no snapshot
-    assert len(stale) == 14
-    editor = base / "reeftech_catalog_editor/custom_components/reeftech_catalog_editor"
+    # the editor: 4 modules (with the rules), no snapshot; the house view: 2
+    # modules (no conversion), it reads another catalog: no snapshot from here
+    assert len(stale) == 16
+    house = base / "ha-house-view-component/custom_components/house_view"
+    assert sorted(path.name for path in house.iterdir()) == [
+        "catalog_pack.py",
+        "catalog_runtime.py",
+    ]
+    editor = base / "catalog-editor/custom_components/catalog_editor"
     assert (
         (editor / "catalog_rules.py")
         .read_text()

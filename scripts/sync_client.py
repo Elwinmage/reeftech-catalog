@@ -37,7 +37,11 @@ HEADER = "# Generated from reeftech-catalog/client/{name} by scripts/sync_client
 
 #: Modules only some domains need, besides CLIENT_FILES
 EXTRA_FILES: dict[str, tuple[str, ...]] = {
-    "reeftech_catalog_editor": ("catalog_rules.py",),
+    "catalog_editor": ("catalog_rules.py",),
+}
+#: Modules of CLIENT_FILES a domain has no use for (it reads no water test)
+LEFT_OUT: dict[str, tuple[str, ...]] = {
+    "house_view": ("catalog_conversion.py",),
 }
 
 
@@ -74,7 +78,10 @@ TARGETS: dict[str, tuple[str, tuple[Reads, ...]]] = {
         (Reads("equipment", ("aquarium",)),),
     ),
     "ha-maintenance-hub": ("maintenance_hub", (Reads("equipment"),)),
-    "reeftech_catalog_editor": ("reeftech_catalog_editor", ()),
+    "catalog-editor": ("catalog_editor", ()),
+    # Reads the sections of another catalog (declared with register_section),
+    # whose own tools write its snapshots: only the client comes from here
+    "ha-house-view-component": ("house_view", ()),
 }
 
 
@@ -127,7 +134,12 @@ def write_snapshot(
 
 def client_files(domain: str) -> tuple[str, ...]:
     """Modules copied into the integration of a domain."""
-    return (*CLIENT_FILES, *EXTRA_FILES.get(domain, ()))
+    left_out = LEFT_OUT.get(domain, ())
+    return tuple(
+        name
+        for name in (*CLIENT_FILES, *EXTRA_FILES.get(domain, ()))
+        if name not in left_out
+    )
 
 
 def write_client(dest: Path, domain: str) -> None:
