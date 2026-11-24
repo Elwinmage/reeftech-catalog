@@ -739,7 +739,7 @@ class CatalogUpdater:
         return Layer("pack", self.root, f"{base}/pack", own)
 
     def layers(self) -> list[Layer]:
-        """The folders the view is read from, least specific first."""
+        """The folders the view is read from, least specific first. Looks at the disk: never on the event loop."""
         base = f"/{self.spec.domain}_catalog{self.spec.suffix}"
         layers = []
         builtin = builtin_dir(self.spec)
@@ -759,13 +759,15 @@ class CatalogUpdater:
         """Merged catalog as last loaded (loaded at start, reloaded on install)."""
         return self._view or {}
 
+    def _read_view(self) -> dict[str, Any]:
+        """Read the layers and merge them. Runs in an executor: it looks at the folders and reads their files."""
+        return build_view(self.layers(), self.spec.section, self.spec.scopes)
+
     async def async_view(self, refresh: bool = False) -> dict[str, Any]:
         """Merged catalog (built-in < pack < shared user < user), re-read on demand."""
         view = self._view
         if view is None or refresh:
-            view = await self.hass.async_add_executor_job(
-                build_view, self.layers(), self.spec.section, self.spec.scopes
-            )
+            view = await self.hass.async_add_executor_job(self._read_view)
             self._view = view
         return view
 
