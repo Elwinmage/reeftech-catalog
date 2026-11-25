@@ -1,0 +1,26 @@
+{
+  "brand": "Colombo",
+  "name": "Kalium Potassium Test (colour 2)",
+  "tests": [
+    {
+      "parameter": "k",
+      "unit": "ppm",
+      "method": "titration",
+      "table": {
+        "amount_unit": "ml",
+        "points": [
+          {
+            "amount": 0.3,
+            "value": 425
+          },
+          {
+            "amount": 0.7,
+            "value": 325
+          }
+        ]
+      }
+    }
+  ],
+  "verified": true,
+  "source": "Colombo Kalium Potassium Test (colour 2) leaflet, conversion table K-3 added -> K: 0.30 ml = 425 mg/l to 0.70 ml = 325 mg/l in steps of 0.01 ml / 2.5 mg/l, no row outside that range (5 ml sample); the manual states mg/l K = 500 - 250 x ml of K-3 used"
+}

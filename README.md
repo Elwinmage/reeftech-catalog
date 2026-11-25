@@ -870,7 +870,7 @@ so a pull request only adds the folder of its entry.
 </details>
 
 <details>
-<summary><b>Water parameters</b> (13, by category)</summary>
+<summary><b>Water parameters</b> (14, by category)</summary>
 
 <details>
 <summary><b>physical</b> (4)</summary>
@@ -924,11 +924,12 @@ so a pull request only adds the folder of its entry.
 </details>
 
 <details>
-<summary><b>nutrient</b> (2)</summary>
+<summary><b>nutrient</b> (3)</summary>
 
 | Symbol | Parameter | Unit | Reef range |
 |---|---|---|---|
 | NO3 | Nitrate | ppm | 1-10 (5) |
+| NO2 | Nitrite | ppm | 0-0.05 (0) |
 | PO4 | Phosphate | ppm | 0.02-0.1 (0.05) |
 
 </details>
@@ -936,7 +937,7 @@ so a pull request only adds the folder of its entry.
 </details>
 
 <details>
-<summary><b>Water tests</b> (8, 3 brands, by parameter and brand)</summary>
+<summary><b>Water tests</b> (9, 3 brands, by parameter and brand)</summary>
 
 <details>
 <summary><b>KH</b> (3)</summary>
@@ -1020,6 +1021,20 @@ so a pull request only adds the folder of its entry.
 |  | Test | Parameters |
 |---|---|---|
 |  | Mg Profi Test | Mg (titration) |
+
+</details>
+
+</details>
+
+<details>
+<summary><b>K</b> (1)</summary>
+
+<details>
+<summary>Colombo (1)</summary>
+
+|  | Test | Parameters |
+|---|---|---|
+|  | Kalium Potassium Test (colour 2) | K (titration) |
 
 </details>
 

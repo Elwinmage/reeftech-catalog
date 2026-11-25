@@ -1,0 +1,19 @@
+{
+  "name": {
+    "en": "Nitrite",
+    "fr": "Nitrite"
+  },
+  "symbol": "NO2",
+  "category": "nutrient",
+  "unit": "ppm",
+  "decimals": 2,
+  "icon": "mdi:molecule",
+  "range": {
+    "min": 0,
+    "max": 0.1,
+    "low": 0,
+    "high": 0.05,
+    "optimal": 0
+  },
+  "source": "Common reef-keeping range: nitrite is toxic, the target is zero"
+}
